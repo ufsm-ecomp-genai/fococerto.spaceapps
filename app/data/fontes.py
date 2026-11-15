@@ -19,8 +19,18 @@ from app.data.geo import dentro_bbox, grade, haversine_km
 
 USER_AGENT = "FocoCerto/0.1 (Open Agent Hackathon 2026, time ECOMP - UFSM)"
 
-FIRMS_URL = ("https://firms.modaps.eosdis.nasa.gov/data/active_fire/suomi-npp-viirs-c2/csv/"
-             "SUOMI_VIIRS_C2_Global_{janela}.csv")
+_FIRMS_BASE = "https://firms.modaps.eosdis.nasa.gov/data/active_fire/"
+# Feeds NRT globais do FIRMS por sensor (MODIS 1 km e VIIRS 375 m). {janela} ∈ JANELAS_FIRMS.
+FIRMS_URLS = {
+    "viirs_snpp": _FIRMS_BASE + "suomi-npp-viirs-c2/csv/SUOMI_VIIRS_C2_Global_{janela}.csv",
+    "modis_c6": _FIRMS_BASE + "modis-c6.1/csv/MODIS_C6_1_Global_{janela}.csv",
+    "viirs_noaa20": _FIRMS_BASE + "noaa-20-viirs-c2/csv/J1_VIIRS_C2_Global_{janela}.csv",
+    "viirs_noaa21": _FIRMS_BASE + "noaa-21-viirs-c2/csv/J2_VIIRS_C2_Global_{janela}.csv",
+}
+# Sensor de cada feed, no formato esperado por app.data.harmonizacao ("MODIS" ou "VIIRS").
+SENSOR_FIRMS = {"viirs_snpp": "VIIRS", "modis_c6": "MODIS", "viirs_noaa20": "VIIRS", "viirs_noaa21": "VIIRS"}
+# Feed histórico do motor de despacho (só VIIRS S-NPP); mantido por compatibilidade.
+FIRMS_URL = FIRMS_URLS["viirs_snpp"]
 JANELAS_FIRMS = ("24h", "48h", "7d")
 GEONAMES_URL = "https://download.geonames.org/export/dump/cities1000.zip"
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
@@ -84,7 +94,7 @@ def id_foco(lat: float, lon: float, data: str, hora: str, satelite: str) -> str:
 
 
 def ler_firms(caminho: Path, bbox=None) -> list[dict]:
-    """Lê o CSV do FIRMS (VIIRS), recorta pela bbox e deduplica pelo id.
+    """Lê o CSV do FIRMS (MODIS ou VIIRS: as colunas usadas são as mesmas), recorta pela bbox e deduplica pelo id.
 
     Devolve dicts com as colunas de COLUNAS_FOCOS (lat/lon/frp como float, data_hora_utc ISO).
     """
