@@ -1,36 +1,51 @@
-# Declaração Formal de Trabalho Prévio (Prior Work Disclosure)
-## NASA International Space Apps Challenge 2026
-**Desafio:** Harmonization of MODIS and VIIRS Hot Spots  
-**Equipe:** ECOMP - UFSM (Universidade Federal de Santa Maria, RS, Brasil)  
-**Licença do Projeto:** Apache License 2.0 (Open Source / OSI-compliant)
+# Prior Work Disclosure
 
----
+**NASA International Space Apps Challenge 2026** · Challenge: **Harmonization of MODIS and VIIRS Hot Spots**
+Team **ECOMP - UFSM** (Universidade Federal de Santa Maria, RS, Brazil) · License: [Apache 2.0](LICENSE)
 
-### 1. Declaração de Conformidade com as Regras da NASA
+This document states which parts of this repository existed before the hackathon and which were built during
+it. The boundary is auditable in git: commit `841b7c6` ("initial commit from FocoCerto base") imports the
+pre-existing FocoCerto code unchanged, and every later commit is hackathon work.
 
-Em estrito cumprimento às **Regras Oficiais do NASA International Space Apps Challenge** (Seção *Project Submission and Open Source Requirements*), esta declaração estabelece de forma pública, inequívoca e auditável a fronteira exata entre o código/arquitetura pré-existente e os avanços, algoritmos e componentes desenvolvidos exclusivamente durante o hackathon de 2026.
+## Pre-existing work (before Space Apps 2026)
 
----
+FocoCerto was built by the same team for an earlier 2026 hackathon. It is a decision-support tool that ranks
+simultaneous wildfires and orders scarce firefighting resources. It included:
 
-### 2. Matriz de Demarcação de Autoria
+| Component | Where |
+|---|---|
+| Multi-agent reasoning (Planner, Critic, Analyst) and its graph | `app/agents/` |
+| Agent tools: monitor, rule checks, citation checks, simple allocator, queries | `app/tools/` |
+| LLM client and offline/sample mode | `app/llm/`, `app/cli.py` (`run`, `nota`, `aprovar`, `avaliar`) |
+| Data layer for one VIIRS S-NPP feed, GeoNames, OpenStreetMap and Open-Meteo | `app/data/` (except the files below), `scripts/ingest_firms.py` |
+| HTTP API serving the plan | `app/api.py` |
+| Web app (plan, map, resources, reasoning views) | `web/app/` |
+| Memory service and evaluation scenarios | `services/hmem/`, `eval/` |
 
-| Componente / Módulo | Origem / Trabalho Prévio (Base) | Desenvolvido no Hackathon NASA Space Apps 2026 |
-| :--- | :--- | :--- |
-| **Pipeline de Harmonização Espacial e Radiativa** (`app/data/harmonizacao.py`) | *Nenhum.* Inexistente no projeto original. | **100% NOVO:** Algoritmo de discretização em grade espacial $0.1^\circ \times 0.1^\circ$, mapeamento de confiança multinível (MODIS numérico para float; VIIRS categórico low/nominal/high), fator de escala empírico ($0.30 \cdot N_{\text{VIIRS}}$) para equivalência de contagem e fusão conservativa de Fire Radiative Power ($\text{FRP}_{\text{harm}} = \sum \text{FRP}_{\text{MODIS}} + \sum \text{FRP}_{\text{VIIRS}}$). |
-| **Motor de Séries Temporais e Climatologia** (`app/data/calendario.py`) | *Nenhum.* Inexistente no projeto original. | **100% NOVO:** Matriz temporal multidecenal (2000–2026, 24 anos), cálculo da mediana climatológica por semana ($\tilde{\mu}_w$), Desvio Absoluto da Mediana (MAD), limiares de percentil ($P_{90}$, $P_{95}$) e cálculo do índice de anomalia normalizado $Z_{\text{fire}}$. |
-| **Fire Activity Calendar Web UI** (`web/app/src/FireCalendar.jsx`) | *Nenhum.* Inexistente no projeto original. | **100% NOVO:** Interface de matriz térmica (heatmap interativo 2000–2026), filtros de granularidade (semanal/mensal), curvas de linha de base histórica vs. ano atual e botão de acionamento tático que injeta cenários de queima crítica no grafo de despacho. |
-| **Scripts de Ingestão e Amostragem FIRMS** (`scripts/ingestao_firms.py`, `data/samples_firms/`) | *Nenhum.* Inexistente no projeto original. | **100% NOVO:** Pipelines de download e processamento de dados brutos do NASA FIRMS API / NRT para MODIS C6.1 e VIIRS 375m (Suomi-NPP, NOAA-20, NOAA-21). |
-| **Suite de Testes Científicos** (`tests/test_harmonizacao.py`) | *Nenhum.* Inexistente no projeto original. | **100% NOVO:** Testes unitários com `pytest` cobrindo consistência de grade, conservação de FRP e detecção de anomalias com dados reais do Cerrado/Tocantins. |
-| **Orquestrador Multi-Agente de Raciocínio Tático** (`app/agentes/`) | **Código Base Pré-Existente:** Estrutura geral de agentes de raciocínio autônomo (Planner, Critic, Tool-Calling) desenvolvida para alocação de recursos em brigadas de incêndio florestal. | **ADAPTADO:** Enriquecimento do prompt do Planner e do Critic para consumir o índice $Z_{\text{fire}}$ e o FRP harmonizado do Calendário de Atividades como gatilhos primários de severidade no despacho. |
-| **Servidor de API e Rotas Base** (`app/api.py`, `app/tipos.py`) | **Código Base Pré-Existente:** Esqueleto FastAPI para servir respostas do orquestrador de agentes e modelos Pydantic básicos. | **EXPANDIDO:** Novas rotas dedicadas (`/api/calendario`, `/api/harmonizacao`) e modelos de dados para séries temporais do FIRMS. |
+The previous README is preserved in git history at commit `841b7c6`.
 
----
+## New work during Space Apps 2026
 
-### 3. Licenciamento e Acesso Aberto
+| Component | Where | What is new |
+|---|---|---|
+| MODIS + VIIRS harmonization | `app/data/harmonizacao.py` | Loads MODIS C6.1 and VIIRS 375 m FIRMS CSVs, maps confidence (MODIS 0–100; VIIRS low/nominal/high), aggregates on a 0.1° grid, and for t ≥ 2012 computes `N_harm = N_MODIS + 0.30·N_VIIRS` and `FRP_harm = ΣFRP_MODIS + ΣFRP_VIIRS` (MODIS only before 2012). The 0.30 factor is taken from the literature, not calibrated by the team. |
+| Fire activity calendar engine | `app/data/calendario.py` | Year × period matrix 2000–2026, weekly median, MAD, P90/P95, `Z_fire` and NORMAL / ATENCAO / CRITICO status; JSON export for the web app. |
+| CLI for judges | `app/cli_calendario.py`, flags in `app/cli.py` | `python3 -m app.cli --sample --harmonizar` and `--calendario`. |
+| Multi-sensor FIRMS ingestion | `app/data/fontes.py`, `scripts/ingest_firms.py` | Feeds for MODIS C6.1, VIIRS S-NPP, NOAA-20 and NOAA-21 (`--sensor`), and offline ingestion of several files. Before, only VIIRS S-NPP. |
+| Fire Activity Calendar web view | `web/app/src/` | Calendar heatmap in the web app, plus Space Apps branding (title, header, footer credits). |
+| Sample data | `data/samples_firms/` | Small FIRMS-format sample (10 MODIS + 21 VIIRS detections, Tocantins, 15–16 Sep 2024) used by tests and the sample mode. |
+| Tests | `tests/test_harmonizacao.py`, `tests/test_cli_calendario.py`, `tests/test_ingest_firms_multisensor.py` | Grid aggregation, FRP conservation, pre-2012 behaviour, anomaly status, CLI output and multi-sensor ingestion, all offline. |
+| Challenge documentation | `docs/spaceapps/`, `tasks/` | Challenge brief, rules, scientific summaries and team plan. |
 
-* O projeto é distribuído integralmente sob os termos da **Apache License, Version 2.0**.
-* O texto completo da licença encontra-se no arquivo [`LICENSE`](file:///home/dorneles/ecomp-ufsm-genai/fococerto-spaceapps/LICENSE) na raiz do repositório, atribuído a:
-  ```
-  Copyright 2026 Team ECOMP - UFSM (Universidade Federal de Santa Maria, Brazil)
-  ```
-* Todo o código-fonte, dados abertos e documentação são públicos e auditáveis no repositório GitHub da equipe.
+## Not yet done
+
+These items are planned, not implemented. They are listed so the boundary above is not read as covering them:
+
+- **Historical record:** the 2000–2026 baseline is still a synthetic, illustrative seasonal curve for the Cerrado (`estimar_linha_base_sazonal_cerrado` in `app/data/calendario.py`), complemented by the small sample above. It is not yet computed from the full FIRMS archive.
+- **Calendar → dispatch link:** the calendar status is not yet an input to the Planner or Critic prompts. The calendar can only send the user to the existing plan flow.
+- **API routes:** there are no `/api/calendario` or `/api/harmonizacao` routes yet.
+
+## License
+
+All code, data and documentation in this repository are released under the [Apache License 2.0](LICENSE),
+Copyright 2026 Team ECOMP - UFSM.
