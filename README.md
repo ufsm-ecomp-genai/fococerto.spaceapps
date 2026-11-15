@@ -1,8 +1,12 @@
-# FocoCerto
+# FocoCerto Harmonizer
 
-**When there are more wildfires than crews, FocoCerto helps a regional coordinator decide which fires to attend first and which resource to send to each one, and shows why.**
+**NASA International Space Apps Challenge 2026** · **Challenge: Harmonization of MODIS and VIIRS Hot Spots**  
+Team **ECOMP - UFSM** (Universidade Federal de Santa Maria, Brazil)  
+*Orchestration, Team Playbook & Scientific Dossier:* [`docs/spaceapps/README.md`](docs/spaceapps/README.md)
 
-Open Agent Hackathon 2026 · **Track 3: Reasoning Architecture** · Team ECOMP - UFSM (Universidade Federal de Santa Maria, Brazil)
+---
+
+**When there are more wildfires than crews, FocoCerto helps a regional coordinator decide which fires to attend first and which resource to send to each one, and shows why.** Driven by two decades of harmonized NASA FIRMS observations (MODIS C6.1 + VIIRS 375m).
 
 ![FocoCerto web app on a real run: the operations map with incidents by priority and crews on their way, and on the right the incidents that need the coordinator's decision, sorted by people exposed](docs/img/overview.jpg)
 <sub>The web app on a real run (Zetaris + NVIDIA Nemotron through Meterless Nightshift + H-MEM), Tocantins, 23 Oct 2026. Open it yourself in 3 minutes: see the [Quick start](#quick-start-about-3-minutes-no-keys-or-services-needed).</sub>
@@ -27,8 +31,8 @@ agents; the real mode (Zetaris + Nightshift + H-MEM) is in [Setup](#setup).
 
 **Linux / macOS**
 ```bash
-git clone https://github.com/ufsm-ecomp-genai/fococerto.git
-cd fococerto
+git clone https://github.com/ufsm-ecomp-genai/fococerto.spaceapps.git
+cd fococerto.spaceapps
 python3.12 -m venv .venv                 # create the virtual environment (once)
 source .venv/bin/activate                # activate it (in every new terminal)
 pip install -r requirements.txt          # install the dependencies (once)
@@ -38,8 +42,8 @@ xdg-open out/tocantins/2026-10-23/mapa.html    # macOS: open out/tocantins/2026-
 
 **Windows (PowerShell)**
 ```powershell
-git clone https://github.com/ufsm-ecomp-genai/fococerto.git
-cd fococerto
+git clone https://github.com/ufsm-ecomp-genai/fococerto.spaceapps.git
+cd fococerto.spaceapps
 py -3.12 -m venv .venv                   # create the virtual environment (once)
 Set-ExecutionPolicy -Scope Process Bypass   # only if activation is blocked
 .venv\Scripts\Activate.ps1               # activate it (in every new terminal)
