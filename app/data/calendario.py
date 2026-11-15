@@ -1,236 +1,271 @@
-"""
-Motor do Calendário de Atividade de Fogo e Linha de Base Climatológica Multi-Decenal (2000–2026).
-NASA International Space Apps Challenge 2026 - Harmonization of MODIS and VIIRS Hot Spots.
+"""Motor do Fire Activity Calendar (task-agente-02, CONTEXT.md §3C e §4).
 
-Equipe ECOMP - UFSM (Universidade Federal de Santa Maria, RS, Brasil).
-Distribuído sob licença Apache-2.0.
-"""
+Recebe a série harmonizada de ``app.data.harmonizacao`` e monta a matriz ano x período (mês ou semana ISO) de
+2000 a 2026, com linha de base climatológica robusta e índice de anomalia:
 
+    mediana_p   = mediana{ N_harm(y, p) | y nos anos de base, y != ano avaliado }
+    sigma_p     = 1.4826 * MAD_p           (fallbacks se MAD = 0: desvio médio absoluto * 1.2533, depois 1.0)
+    Z_fire(y,p) = (N_harm(y, p) - mediana_p) / sigma_p
+
+    NORMAL   : Z < 1.0
+    ATENCAO  : 1.0 <= Z < 2.0
+    CRITICO  : Z >= 2.0  ou  N_harm > P95 da base (com N_harm > 0)
+    SEM_DADOS: período posterior à data de corte (ainda não observado)
+
+A linha de base é "leave-one-out": o ano avaliado não entra na própria mediana, para não amortecer a anomalia.
+
+Como os CSVs de ``data/samples_firms/`` só cobrem dois dias de 2024, ``gerar_calendario_amostra`` combina essa
+amostra com uma série climatológica SINTÉTICA (declarada no JSON em ``amostra``/``fonte_dados``) para que a
+interface tenha 27 anos a mostrar. Nunca apresente esse JSON como observação real da NASA.
+"""
 from __future__ import annotations
 
 import json
 import math
-import statistics
-from datetime import datetime, timezone
+import random
+from collections import defaultdict
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+
+from app.data.harmonizacao import (ANO_INICIO_VIIRS, BETA_VIIRS, contagem_harmonizada, frp_harmonizado,
+                                   harmonizar_amostra)
+
+RAIZ = Path(__file__).resolve().parents[2]
+SAIDA_FRONTEND = RAIZ / "web" / "app" / "src" / "assets" / "dados_calendario.json"
+
+Z_ATENCAO = 1.0
+Z_CRITICO = 2.0
+FATOR_MAD = 1.4826
+STATUS = ("NORMAL", "ATENCAO", "CRITICO", "SEM_DADOS")
+MESES_EN = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
 
 
-def calcular_percentil(valores: List[float], p: float) -> float:
-    """Calcula o percentil p (0 a 100) de uma lista numérica."""
+# ----------------------------------------------------------------------------- estatística
+
+def mediana(valores: list[float]) -> float:
     if not valores:
         return 0.0
-    if len(valores) == 1:
-        return float(valores[0])
-    s = sorted(valores)
-    k = (len(s) - 1) * (p / 100.0)
-    f = math.floor(k)
-    c = math.ceil(k)
-    if f == c:
-        return float(s[int(k)])
-    d0 = s[int(f)] * (c - k)
-    d1 = s[int(c)] * (k - f)
-    return round(float(d0 + d1), 2)
+    v = sorted(valores)
+    n = len(v)
+    return float(v[n // 2]) if n % 2 else (v[n // 2 - 1] + v[n // 2]) / 2.0
 
 
-def calcular_mad(valores: List[float], mediana: float) -> float:
-    """Calcula o Desvio Absoluto da Mediana (Median Absolute Deviation - MAD)."""
+def percentil(valores: list[float], p: float) -> float:
+    """Percentil com interpolação linear (mesmo método do numpy padrão)."""
     if not valores:
         return 0.0
-    desvios = [abs(x - mediana) for x in valores]
-    return round(float(statistics.median(desvios)), 2)
+    v = sorted(valores)
+    if len(v) == 1:
+        return float(v[0])
+    pos = (len(v) - 1) * p / 100.0
+    lo, hi = math.floor(pos), math.ceil(pos)
+    return float(v[lo] + (v[hi] - v[lo]) * (pos - lo))
 
 
-def estimar_linha_base_sazonal_cerrado(semana: int) -> Dict[str, float]:
+def sigma_robusto(valores: list[float], centro: float) -> float:
+    """1.4826 * MAD; se MAD = 0 (base muito concentrada), usa 1.2533 * desvio médio absoluto; se ainda 0, 1.0."""
+    if not valores:
+        return 1.0
+    desvios = [abs(x - centro) for x in valores]
+    mad = mediana(desvios)
+    if mad > 0:
+        return FATOR_MAD * mad
+    media_abs = sum(desvios) / len(desvios)
+    return 1.2533 * media_abs if media_abs > 0 else 1.0
+
+
+def classificar(z: float, valor: float, p95: float) -> str:
+    if z >= Z_CRITICO or (valor > p95 and valor > 0):
+        return "CRITICO"
+    if z >= Z_ATENCAO:
+        return "ATENCAO"
+    return "NORMAL"
+
+
+# ----------------------------------------------------------------------------- matriz
+
+def _primeiro_dia_periodo(ano: int, p: int, periodo: str) -> date:
+    if periodo == "mes":
+        return date(ano, p, 1)
+    return date.fromisocalendar(ano, p, 1)
+
+
+def _mes_da_semana(ano: int, semana: int) -> int:
+    return date.fromisocalendar(ano, semana, 4).month   # quinta-feira define o mês da semana ISO
+
+
+def _texto_alerta(status: str, desvio_pct: float | None, z: float, n_anos_base: int) -> str:
+    if status == "NORMAL":
+        return ""
+    rel = f"{desvio_pct:+.0f}% vs {n_anos_base}-year historical median" if desvio_pct is not None \
+        else f"activity where the {n_anos_base}-year historical median is zero"
+    if status == "CRITICO":
+        return f"Extreme thermal anomaly: {rel} (Z={z:.2f})"
+    return f"Above-normal fire activity: {rel} (Z={z:.2f})"
+
+
+def construir_matriz_temporal(focos_harm: list[dict], ano_inicio: int = 2000, ano_fim: int = 2026,
+                              periodo: str = "mes", data_corte: date | None = None,
+                              anos_base: tuple[int, int] | None = None, regiao: str = "tocantins",
+                              nome_exibicao: str = "Tocantins / Cerrado") -> dict:
+    """Matriz ano x período com linha de base, Z_fire e status (contrato CONTEXT.md §4).
+
+    ``focos_harm``: registros de ``harmonizar_series`` (qualquer granularidade de tempo; cada um precisa de
+    ``ano``, ``mes``, ``semana``, ``n_modis``, ``n_viirs``; ``frp_modis_mw``/``frp_viirs_mw`` ou ``frp_total_mw``).
+    ``periodo``: ``"mes"`` (12 colunas) ou ``"semana"`` (52 colunas ISO).
+    ``data_corte``: períodos que começam depois dela viram ``SEM_DADOS`` (padrão: hoje, UTC).
+    ``anos_base``: intervalo (inclusive) da climatologia; padrão ``(ano_inicio, ano_fim - 1)``.
     """
-    Linha de base climatológica sintética calibrada de 24 anos (2000-2024) para o Cerrado / Tocantins
-    baseada nos registros históricos do NASA FIRMS (pico em semanas 32 a 42 - Agosto a Outubro).
-    Utilizada para complementar a série histórica quando alimentado com amostras parciais.
-    """
-    # Curva gaussiana sazonal centrada na semana 37 (meados de setembro)
-    centro = 37.0
-    largura = 5.5
-    fator_gauss = math.exp(-((semana - centro) ** 2) / (2 * (largura ** 2)))
-    
-    # Base em época de chuvas (~120 focos) até o pico de seca (~2400 focos)
-    mediana = 120.0 + (2280.0 * fator_gauss)
-    mad = max(35.0, mediana * 0.32)
-    p90 = mediana + (1.645 * mad * 1.4826)
-    p95 = mediana + (1.960 * mad * 1.4826)
+    if periodo not in ("mes", "semana"):
+        raise ValueError("periodo deve ser 'mes' ou 'semana'")
+    if ano_fim < ano_inicio:
+        raise ValueError("ano_fim < ano_inicio")
+    n_periodos = 12 if periodo == "mes" else 52
+    data_corte = data_corte or datetime.now(timezone.utc).date()
+    base_ini, base_fim = anos_base or (ano_inicio, ano_fim - 1)
+
+    acum: dict[tuple[int, int], dict] = defaultdict(lambda: {"n_modis": 0, "n_viirs": 0, "frp_modis": 0.0,
+                                                              "frp_viirs": 0.0})
+    for r in focos_harm:
+        ano = int(r["ano"])
+        if not ano_inicio <= ano <= ano_fim:
+            continue
+        p = int(r["mes"]) if periodo == "mes" else min(int(r["semana"]), 52)
+        a = acum[(ano, p)]
+        a["n_modis"] += r.get("n_modis", 0)
+        a["n_viirs"] += r.get("n_viirs", 0)
+        if "frp_modis_mw" in r or "frp_viirs_mw" in r:
+            a["frp_modis"] += r.get("frp_modis_mw", 0.0)
+            a["frp_viirs"] += r.get("frp_viirs_mw", 0.0)
+        else:
+            a["frp_modis"] += r.get("frp_total_mw", 0.0)
+
+    # valores harmonizados de toda a grade (ausência de foco = 0 detecções, se o período já foi observado)
+    def observado(ano: int, p: int) -> bool:
+        return _primeiro_dia_periodo(ano, p, periodo) <= data_corte
+
+    valores: dict[tuple[int, int], float] = {}
+    for ano in range(ano_inicio, ano_fim + 1):
+        for p in range(1, n_periodos + 1):
+            if observado(ano, p):
+                a = acum.get((ano, p))
+                valores[(ano, p)] = contagem_harmonizada(a["n_modis"], a["n_viirs"], ano) if a else 0.0
+
+    matriz: list[dict] = []
+    resumo = {s: 0 for s in STATUS}
+    for ano in range(ano_inicio, ano_fim + 1):
+        for p in range(1, n_periodos + 1):
+            a = acum.get((ano, p), {"n_modis": 0, "n_viirs": 0, "frp_modis": 0.0, "frp_viirs": 0.0})
+            base = [valores[(y, p)] for y in range(base_ini, base_fim + 1) if y != ano and (y, p) in valores]
+            med = mediana(base)
+            celula = {
+                "ano": ano,
+                "mes": p if periodo == "mes" else _mes_da_semana(ano, p),
+                "semana": None if periodo == "mes" else p,
+                "rotulo": f"{MESES_EN[p - 1]} {ano}" if periodo == "mes" else f"W{p:02d} {ano}",
+                "focos_harmonizados": None,
+                "focos_modis_bruto": a["n_modis"],
+                "focos_viirs_bruto": a["n_viirs"],
+                "frp_total_mw": round(frp_harmonizado(a["frp_modis"], a["frp_viirs"], ano), 1),
+                "mediana_historica": round(med, 2),
+                "p90": round(percentil(base, 90), 2),
+                "p95": round(percentil(base, 95), 2),
+                "desvio_percentual": None,
+                "z_score": None,
+                "status": "SEM_DADOS",
+                "alerta": "",
+            }
+            if (ano, p) in valores:
+                v = valores[(ano, p)]
+                z = (v - med) / sigma_robusto(base, med)
+                desvio = round((v - med) / med * 100.0, 1) if med > 0 else None
+                status = classificar(z, v, celula["p95"])
+                celula.update(focos_harmonizados=round(v, 2), z_score=round(z, 2), desvio_percentual=desvio,
+                              status=status, alerta=_texto_alerta(status, desvio, z, len(base)))
+            resumo[celula["status"]] += 1
+            matriz.append(celula)
 
     return {
-        "mediana": round(mediana, 1),
-        "mad": round(mad, 1),
-        "p90": round(p90, 1),
-        "p95": round(p95, 1),
-    }
-
-
-def construir_matriz_temporal(
-    focos_harm: List[Dict[str, Any]],
-    ano_inicio: int = 2000,
-    ano_fim: int = 2026,
-    regiao: str = "tocantins",
-    nome_exibicao: str = "Tocantins / Cerrado",
-) -> Dict[str, Any]:
-    """
-    Constrói a matriz espaço-temporal de 24+ anos, agrupada por ano e semana/mês,
-    calculando a linha de base histórica, índice de anomalia Z_fire e status de risco.
-    """
-    # Agrupa dados de entrada reais fornecidos em focos_harm por (ano, semana)
-    dados_entrada: Dict[Tuple[int, int], Dict[str, float]] = {}
-
-    for item in focos_harm:
-        ano = item.get("ano", 2024)
-        semana = item.get("semana", 1)
-        chave = (ano, semana)
-
-        if chave not in dados_entrada:
-            dados_entrada[chave] = {
-                "focos_harm": 0.0,
-                "focos_modis": 0.0,
-                "focos_viirs": 0.0,
-                "frp_total": 0.0,
-                "mes": item.get("mes", 1),
-            }
-
-        bloco = dados_entrada[chave]
-        bloco["focos_harm"] += item.get("focos_harmonizados", 0.0)
-        bloco["focos_modis"] += item.get("focos_modis", 0.0)
-        bloco["focos_viirs"] += item.get("focos_viirs", 0.0)
-        bloco["frp_total"] += item.get("frp_harmonizado_mw", item.get("frp_total_mw", 0.0))
-        bloco["mes"] = item.get("mes", bloco["mes"])
-
-    # Coleta valores por semana para calcular linhas de base históricas
-    valores_por_semana: Dict[int, List[float]] = {w: [] for w in range(1, 53)}
-
-    for (ano, sem), vals in dados_entrada.items():
-        if ano_inicio <= ano <= ano_fim:
-            valores_por_semana[sem].append(vals["focos_harm"])
-
-    # Monta tabela climatológica semanal de referência
-    linha_base_semanal: Dict[int, Dict[str, float]] = {}
-    for w in range(1, 53):
-        vals = valores_por_semana[w]
-        if len(vals) >= 3:
-            med = float(statistics.median(vals))
-            mad = calcular_mad(vals, med)
-            p90 = calcular_percentil(vals, 90.0)
-            p95 = calcular_percentil(vals, 95.0)
-            linha_base_semanal[w] = {
-                "mediana": round(med, 1),
-                "mad": round(mad, 1),
-                "p90": round(p90, 1),
-                "p95": round(p95, 1),
-            }
-        else:
-            # Usa calibração climatológica robusta do Cerrado
-            linha_base_semanal[w] = estimar_linha_base_sazonal_cerrado(w)
-
-    # Anos com anomalias climáticas conhecidas no Cerrado para contextualização histórica
-    multiplicadores_ano: Dict[int, float] = {
-        2007: 1.55,  # Seca severa histórica
-        2010: 1.70,  # Recorde histórico El Niño
-        2017: 1.35,  # Grande seca centro-oeste
-        2019: 1.30,  # Temporada crítica
-        2020: 1.40,  # Queimadas intensas no bioma
-        2024: 1.85,  # Crise climática de queimadas 2024
-        2025: 1.25,
-        2026: 1.15,
-    }
-
-    matriz: List[Dict[str, Any]] = []
-
-    for ano in range(ano_inicio, ano_fim + 1):
-        mult_ano = multiplicadores_ano.get(ano, 1.0)
-        # Para cada mês representativo (1 a 12), ou semanas principais de monitoramento
-        for mes in range(1, 12 + 1):
-            # Semana representativa do mês (aproximação 4.33 semanas/mês)
-            semana = min(52, max(1, int(round((mes - 1) * 4.33 + 2.5))))
-            chave = (ano, semana)
-            base_w = linha_base_semanal[semana]
-            mediana_ref = base_w["mediana"]
-            mad_ref = base_w["mad"]
-            sigma = max(1.0, 1.4826 * mad_ref)
-
-            if chave in dados_entrada:
-                # Dados reais inseridos pelo usuário / pipeline
-                bloco = dados_entrada[chave]
-                n_harm = round(bloco["focos_harm"], 1)
-                n_modis = int(round(bloco["focos_modis"]))
-                n_viirs = int(round(bloco["focos_viirs"]))
-                frp = round(bloco["frp_total"], 1)
-            else:
-                # Reconstrução histórica calibrada com base na série harmonizada
-                variacao_ano = mult_ano * (0.85 + (math.sin(ano * 1.7 + mes) * 0.15))
-                n_harm = round(mediana_ref * variacao_ano, 1)
-                if ano >= 2012:
-                    # Divisão aproximada MODIS vs VIIRS na proporção empírica 1:3.3
-                    n_modis = int(round(n_harm * 0.50))
-                    n_viirs = int(round((n_harm - n_modis) / 0.30))
-                else:
-                    n_modis = int(round(n_harm))
-                    n_viirs = 0
-                frp = round(n_harm * 18.5, 1)
-
-            # Cálculo do desvio percentual e escore Z
-            if mediana_ref > 0:
-                desvio_pct = round(((n_harm - mediana_ref) / mediana_ref) * 100.0, 1)
-            else:
-                desvio_pct = 0.0
-
-            z_score = round((n_harm - mediana_ref) / sigma, 2)
-
-            # Classificação de severidade
-            if z_score >= 2.0 or n_harm >= base_w["p95"]:
-                status = "CRITICO"
-                alerta = f"Extreme thermal anomaly: Z={z_score:.2f} (+{desvio_pct}% above 24-year historical median)"
-            elif z_score >= 1.0 or n_harm >= base_w["p90"]:
-                status = "ATENCAO"
-                alerta = f"Elevated fire activity: Z={z_score:.2f} (+{desvio_pct}% above baseline)"
-            else:
-                status = "NORMAL"
-                alerta = "Within normal multi-decadal seasonal envelope"
-
-            registro_celula = {
-                "ano": ano,
-                "mes": mes,
-                "semana": semana,
-                "focos_harmonizados": n_harm,
-                "focos_modis_bruto": n_modis,
-                "focos_viirs_bruto": n_viirs,
-                "frp_total_mw": frp,
-                "mediana_historica": mediana_ref,
-                "desvio_percentual": desvio_pct,
-                "z_score": z_score,
-                "status": status,
-                "alerta": alerta,
-            }
-            matriz.append(registro_celula)
-
-    # Ordenação cronológica
-    matriz.sort(key=lambda x: (x["ano"], x["mes"], x["semana"]))
-
-    saida: Dict[str, Any] = {
         "regiao": regiao,
         "nome_exibicao": nome_exibicao,
+        "periodo": periodo,
         "ano_inicio": ano_inicio,
         "ano_fim": ano_fim,
-        "total_periodos": len(matriz),
-        "gerado_em_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "linha_base_semanal": linha_base_semanal,
+        "anos_base": [base_ini, base_fim],
+        "data_corte": data_corte.isoformat(),
+        "beta_viirs": BETA_VIIRS,
+        "ano_inicio_viirs": ANO_INICIO_VIIRS,
+        "gerado_em_utc": datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+        "resumo_status": resumo,
         "matriz": matriz,
     }
 
-    return saida
+
+def exportar_calendario_json(dados_matriz: dict, caminho_saida: Path = SAIDA_FRONTEND) -> None:
+    caminho_saida = Path(caminho_saida)
+    caminho_saida.parent.mkdir(parents=True, exist_ok=True)
+    caminho_saida.write_text(json.dumps(dados_matriz, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 
 
-def exportar_calendario_json(dados_matriz: Dict[str, Any], caminho_saida: Union[Path, str]) -> None:
+# ----------------------------------------------------------------------------- amostra de demonstração
+
+def gerar_serie_sintetica(ano_inicio: int = 2000, ano_fim: int = 2026, data_corte: date | None = None,
+                          semente: int = 2026) -> list[dict]:
+    """Série SEMANAL sintética no formato de ``harmonizar_series`` (só para demonstração offline).
+
+    Ciclo sazonal do Cerrado (pico em agosto-setembro), variação interanual, MODIS-only antes de 2012 e
+    VIIRS com ~3.3x mais detecções que o MODIS depois. Determinística pela ``semente``.
+    NÃO é dado da NASA: serve para exercitar o calendário quando não há histórico baixado.
     """
-    Grava os dados consolidados do Fire Activity Calendar em formato JSON pronto para o frontend.
-    """
-    caminho = Path(caminho_saida)
-    caminho.parent.mkdir(parents=True, exist_ok=True)
+    rng = random.Random(semente)
+    data_corte = data_corte or datetime.now(timezone.utc).date()
+    anos_secos = {2007: 1.9, 2010: 2.1, 2017: 1.6, 2019: 1.5, 2020: 1.4, 2024: 2.3}   # anos de seca (ilustrativos)
+    serie: list[dict] = []
+    for ano in range(ano_inicio, ano_fim + 1):
+        fator_ano = anos_secos.get(ano, rng.uniform(0.75, 1.2))
+        for semana in range(1, 53):
+            ini = date.fromisocalendar(ano, semana, 1)
+            if ini > data_corte:
+                break
+            # sazonalidade: gaussiana centrada na semana 36 (início de setembro)
+            sazonal = 4 + 260 * math.exp(-((semana - 36) / 6.5) ** 2)
+            n_modis = max(0, int(rng.gauss(sazonal * fator_ano, sazonal * 0.18)))
+            n_viirs = int(n_modis * rng.uniform(3.0, 3.6)) if ano >= ANO_INICIO_VIIRS else 0
+            serie.append({
+                "ano": ano, "mes": _mes_da_semana(ano, semana), "semana": semana,
+                "n_modis": n_modis, "n_viirs": n_viirs,
+                "frp_modis_mw": round(n_modis * rng.uniform(25, 45), 1),
+                "frp_viirs_mw": round(n_viirs * rng.uniform(7, 13), 1),
+            })
+    return serie
 
-    with open(caminho, mode="w", encoding="utf-8") as f:
-        json.dump(dados_matriz, f, indent=2, ensure_ascii=False)
+
+def gerar_calendario_amostra(periodo: str = "mes", data_corte: date | None = None,
+                             caminho_saida: Path | None = SAIDA_FRONTEND) -> dict:
+    """Calendário de demonstração: série sintética 2000-2026 + os focos de AMOSTRA de data/samples_firms/."""
+    data_corte = data_corte or datetime.now(timezone.utc).date()
+    focos = gerar_serie_sintetica(data_corte=data_corte) + harmonizar_amostra()
+    dados = construir_matriz_temporal(focos, periodo=periodo, data_corte=data_corte)
+    dados["amostra"] = True
+    dados["fonte_dados"] = ("SAMPLE / SYNTHETIC: deterministic synthetic climatology (seed 2026) plus the "
+                            "data/samples_firms/ MODIS C6.1 + VIIRS 375m sample rows. Not NASA observations; "
+                            "replace with FIRMS archive downloads for real analysis.")
+    if caminho_saida:
+        exportar_calendario_json(dados, caminho_saida)
+    return dados
+
+
+def gerar_calendario_frontend(data_corte: date | None = None, caminho_saida: Path = SAIDA_FRONTEND) -> dict:
+    """JSON único com as duas granularidades (``matriz`` mensal + ``matriz_semanal``) para o FireCalendar.jsx."""
+    mensal = gerar_calendario_amostra("mes", data_corte, caminho_saida=None)
+    semanal = gerar_calendario_amostra("semana", data_corte, caminho_saida=None)
+    mensal["matriz_semanal"] = semanal["matriz"]
+    mensal["resumo_status_semanal"] = semanal["resumo_status"]
+    exportar_calendario_json(mensal, caminho_saida)
+    return mensal
+
+
+if __name__ == "__main__":
+    d = gerar_calendario_frontend()
+    print(f"{SAIDA_FRONTEND.relative_to(RAIZ)}: {len(d['matriz'])} células mensais, "
+          f"{len(d['matriz_semanal'])} semanais; status mensal {d['resumo_status']}")

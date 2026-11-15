@@ -1,315 +1,284 @@
-"""
-Pipeline de Harmonização Científica MODIS (1 km) + VIIRS (375 m).
-NASA International Space Apps Challenge 2026 - Harmonization of MODIS and VIIRS Hot Spots.
+"""Harmonização MODIS C6.1 (1 km) + VIIRS 375 m do NASA FIRMS (task-agente-01, CONTEXT.md §2-3).
 
-Equipe ECOMP - UFSM (Universidade Federal de Santa Maria, RS, Brasil).
-Distribuído sob licença Apache-2.0.
-"""
+O VIIRS tem pixel ~7x menor que o MODIS e detecta 3-4x mais focos pontuais para o mesmo fogo, então as contagens
+brutas NUNCA são somadas. Em vez disso:
 
+* Os focos de ambos os sensores são padronizados num dicionário único (contrato CONTEXT.md §2).
+* São agregados numa grade regular de 0.1° x 0.1° (~11 km), que neutraliza a geometria do pixel.
+* Por célula e intervalo de tempo ``t``:
+
+      FRP_harm(t) = soma FRP_MODIS + soma FRP_VIIRS
+      N_harm(t)   = N_MODIS                      se t < 2012 (antes do VIIRS)
+      N_harm(t)   = N_MODIS + 0.30 * N_VIIRS     se t >= 2012
+
+Sem dependências externas (só biblioteca padrão), para rodar no modo ``--sample`` e nos testes offline.
+"""
 from __future__ import annotations
 
 import csv
-from datetime import datetime
+import json
+from collections import defaultdict
+from datetime import date, datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Tuple, Union
+from typing import Iterable
 
+SENSORES = ("MODIS", "VIIRS")
+PASSO_GRADE_GRAUS = 0.1
+BETA_VIIRS = 0.30            # peso de contagem do VIIRS em equivalência "MODIS-like"
+ANO_INICIO_VIIRS = 2012      # Suomi-NPP VIIRS 375 m disponível no FIRMS a partir de 2012-01-20
 
-# Mapeamento oficial de identificadores de satélites NASA/NOAA
-MAPA_SATELITES: Dict[str, str] = {
-    "T": "Terra",
-    "A": "Aqua",
-    "N": "Suomi-NPP",
-    "1": "NOAA-20",
-    "2": "NOAA-21",
+# Confiança VIIRS (categórica) -> percentual equivalente (CONTEXT.md §2)
+CONFIANCA_VIIRS = {"low": 30.0, "l": 30.0, "nominal": 65.0, "n": 65.0, "high": 90.0, "h": 90.0}
+
+SATELITES = {
+    "MODIS": {"T": "Terra", "TERRA": "Terra", "A": "Aqua", "AQUA": "Aqua"},
+    "VIIRS": {"N": "Suomi-NPP", "NPP": "Suomi-NPP", "SUOMI-NPP": "Suomi-NPP", "SUOMI NPP": "Suomi-NPP",
+              "1": "NOAA-20", "J1": "NOAA-20", "N20": "NOAA-20", "NOAA-20": "NOAA-20", "NOAA20": "NOAA-20",
+              "2": "NOAA-21", "J2": "NOAA-21", "N21": "NOAA-21", "NOAA-21": "NOAA-21", "NOAA21": "NOAA-21"},
 }
 
-# Fator empírico de conversão de resolução espacial (VIIRS 375m para escala equivalente MODIS 1km)
-# Fundamentação: Giglio et al. (2016) e Schroeder et al. (2014)
-# O pixel VIIRS cobre ~0.14 km² vs 1.0-9.6 km² do MODIS, detectando ~3.3x mais focos para a mesma queimada.
-FATOR_ESCALA_VIIRS_MODIS: float = 0.30
+
+class ErroHarmonizacao(ValueError):
+    """CSV fora do formato FIRMS esperado."""
 
 
-def normalizar_confianca(valor: Any, sensor: str) -> float:
-    """
-    Padroniza a métrica de confiança para uma escala contínua float entre 0.0 e 1.0.
+# ----------------------------------------------------------------------------- padronização
 
-    - MODIS Collection 6.1: valor percentual numérico (0 a 100) -> 0.0 a 1.0.
-    - VIIRS 375m: classes categóricas ('low' -> 0.3, 'nominal' -> 0.7, 'high' -> 1.0).
-    """
-    if valor is None:
-        return 0.50
+def _normalizar_sensor(sensor: str) -> str:
+    s = (sensor or "").strip().upper()
+    if s.startswith("MODIS"):
+        return "MODIS"
+    if s.startswith("VIIRS"):
+        return "VIIRS"
+    raise ErroHarmonizacao(f"Sensor desconhecido: {sensor!r} (use 'MODIS' ou 'VIIRS').")
 
-    sensor_upper = sensor.strip().upper()
 
-    if sensor_upper == "VIIRS":
-        s_val = str(valor).strip().lower()
-        if "low" in s_val or s_val == "l":
-            return 0.30
-        if "nom" in s_val or s_val == "n":
-            return 0.70
-        if "high" in s_val or s_val == "h":
-            return 1.00
-        try:
-            num = float(valor)
-            return min(1.0, max(0.0, num / 100.0 if num > 1.0 else num))
-        except (ValueError, TypeError):
-            return 0.70
-
-    # Sensor MODIS ou padrão
+def mapear_confianca(valor, sensor: str) -> float:
+    """Confiança em 0-100. MODIS já é numérico; VIIRS é low/nominal/high (-> 30/65/90)."""
+    sensor = _normalizar_sensor(sensor)
+    texto = str(valor).strip().lower()
+    if sensor == "VIIRS" and texto in CONFIANCA_VIIRS:
+        return CONFIANCA_VIIRS[texto]
     try:
-        num = float(valor)
-        if num > 1.0:
-            return round(min(1.0, max(0.0, num / 100.0)), 2)
-        return round(min(1.0, max(0.0, num)), 2)
-    except (ValueError, TypeError):
-        return 0.50
+        num = float(texto)
+    except ValueError as e:
+        raise ErroHarmonizacao(f"Confiança inválida para {sensor}: {valor!r}") from e
+    return max(0.0, min(100.0, num))
 
 
-def obter_celula_grade(lat: float, lon: float, step: float = 0.1) -> Tuple[float, float]:
+def _nome_satelite(codigo: str, sensor: str) -> str:
+    c = (codigo or "").strip()
+    return SATELITES[sensor].get(c.upper(), c or "?")
+
+
+def _parse_data_hora(acq_date: str, acq_time: str) -> datetime:
+    d = date.fromisoformat(acq_date.strip())
+    hhmm = str(acq_time).strip().zfill(4)
+    return datetime(d.year, d.month, d.day, int(hhmm[:2]), int(hhmm[2:4]), tzinfo=timezone.utc)
+
+
+def semana_do_ano(d: date) -> int:
+    """Semana ISO limitada a 1..52 (a rara semana 53 é somada à 52, para a grade anual ter 52 colunas)."""
+    return min(d.isocalendar()[1], 52)
+
+
+def padronizar_registro(linha: dict, sensor: str) -> dict:
+    """Uma linha do CSV FIRMS -> dicionário do contrato unificado (CONTEXT.md §2)."""
+    sensor = _normalizar_sensor(sensor)
+    try:
+        lat = float(linha["latitude"])
+        lon = float(linha["longitude"])
+        dt = _parse_data_hora(linha["acq_date"], linha["acq_time"])
+        frp = float(linha.get("frp") or 0.0)
+    except (KeyError, ValueError) as e:
+        raise ErroHarmonizacao(f"Linha {sensor} inválida ({e}): {linha}") from e
+    if not (-90.0 <= lat <= 90.0 and -180.0 <= lon <= 180.0):
+        raise ErroHarmonizacao(f"Coordenada fora do intervalo WGS84: {lat}, {lon}")
+    sat = _nome_satelite(linha.get("satellite", ""), sensor)
+    hora = dt.strftime("%H%M")
+    return {
+        "id": f"{sensor}_{sat}_{lat:.4f}_{lon:.4f}_{dt.date().isoformat()}_{hora}",
+        "sensor": sensor,
+        "satelite": sat,
+        "lat": lat,
+        "lon": lon,
+        "data_hora_utc": dt,
+        "ano": dt.year,
+        "mes": dt.month,
+        "semana": semana_do_ano(dt.date()),
+        "dia_noite": (linha.get("daynight") or "").strip().upper()[:1] or "D",
+        "confianca_pct": mapear_confianca(linha.get("confidence", ""), sensor),
+        "frp_mw": max(0.0, frp),
+    }
+
+
+def carregar_e_padronizar_focos(caminho_csv: Path, sensor: str, confianca_minima: float = 0.0) -> list[dict]:
+    """Lê um CSV do NASA FIRMS (MODIS C6.1 ou VIIRS 375 m) e devolve a lista padronizada.
+
+    ``confianca_minima`` (0-100) descarta detecções de baixa confiança (ex.: 30 remove VIIRS ``low``).
+    Linhas duplicadas (mesmo id) são contadas uma vez só.
     """
-    Discretiza coordenadas geográficas contínuas em uma grade espacial uniforme.
-    
-    Por padrão utiliza passo de 0.1° (~11.1 km no equador), neutralizando as variações
-    angulares de footprint causadas pelo efeito bow-tie nas bordas da varredura ótica.
+    sensor = _normalizar_sensor(sensor)
+    caminho_csv = Path(caminho_csv)
+    if not caminho_csv.exists():
+        raise FileNotFoundError(caminho_csv)
+    focos: dict[str, dict] = {}
+    with caminho_csv.open(newline="", encoding="utf-8-sig") as f:
+        leitor = csv.DictReader(f)
+        faltando = {"latitude", "longitude", "acq_date", "acq_time", "frp", "confidence"} - set(leitor.fieldnames or [])
+        if faltando:
+            raise ErroHarmonizacao(f"{caminho_csv.name}: colunas ausentes {sorted(faltando)}")
+        for linha in leitor:
+            if not any((v or "").strip() for v in linha.values()):
+                continue
+            reg = padronizar_registro(linha, sensor)
+            if reg["confianca_pct"] >= confianca_minima:
+                focos.setdefault(reg["id"], reg)
+    return list(focos.values())
+
+
+# ----------------------------------------------------------------------------- grade espacial
+
+def obter_celula_grade(lat: float, lon: float, step: float = PASSO_GRADE_GRAUS) -> tuple[float, float]:
+    """Centro da célula de ``step`` graus que contém o ponto (arredondado para evitar ruído de float)."""
+    casas = max(0, len(f"{step:.10f}".rstrip("0").split(".")[1]))
+    return (round(round(lat / step) * step, casas + 1), round(round(lon / step) * step, casas + 1))
+
+
+def agregar_em_grade(focos: Iterable[dict], step: float = PASSO_GRADE_GRAUS) -> dict:
+    """Agrupa focos padronizados por célula de grade.
+
+    Retorna ``{(lat_c, lon_c): {"lat", "lon", "n_modis", "n_viirs", "frp_modis_mw", "frp_viirs_mw", "ids"}}``.
     """
-    celula_lat = round(round(lat / step) * step, 4)
-    celula_lon = round(round(lon / step) * step, 4)
-    return (celula_lat, celula_lon)
-
-
-def carregar_e_padronizar_focos(caminho_csv: Union[Path, str], sensor: str = "MODIS") -> List[Dict[str, Any]]:
-    """
-    Ingere arquivos brutos de focos térmicos do NASA FIRMS (MODIS C6.1 ou VIIRS 375m)
-    e os converte para uma lista de registros padronizados na memória.
-
-    Colunas suportadas:
-    - MODIS: latitude, longitude, brightness, scan, track, acq_date, acq_time, satellite, confidence, version, bright_t31, frp, daynight
-    - VIIRS: latitude, longitude, bright_ti4, scan, track, acq_date, acq_time, satellite, confidence, version, bright_ti5, frp, daynight
-    """
-    caminho = Path(caminho_csv)
-    if not caminho.exists():
-        raise FileNotFoundError(f"Arquivo CSV não encontrado: {caminho}")
-
-    sensor_clean = sensor.strip().upper()
-    focos_padronizados: List[Dict[str, Any]] = []
-
-    with open(caminho, mode="r", encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        for idx, row in enumerate(reader):
-            lat = float(row["latitude"])
-            lon = float(row["longitude"])
-            scan = float(row.get("scan", 1.0) or 1.0)
-            track = float(row.get("track", 1.0) or 1.0)
-            acq_date = row.get("acq_date", "").strip()
-            acq_time_raw = row.get("acq_time", "0000").strip()
-            acq_time = acq_time_raw.zfill(4)
-
-            sat_code = row.get("satellite", "").strip()
-            sat_nome = MAPA_SATELITES.get(sat_code, sat_code or "Unknown")
-
-            # Mapeamento do canal primário de temperatura de brilho (Kelvin)
-            if "brightness" in row and row["brightness"]:
-                brilho_k = float(row["brightness"])
-            elif "bright_ti4" in row and row["bright_ti4"]:
-                brilho_k = float(row["bright_ti4"])
-            else:
-                brilho_k = 0.0
-
-            # Mapeamento do canal secundário de fundo térmico (Kelvin)
-            if "bright_t31" in row and row["bright_t31"]:
-                brilho_bg_k = float(row["bright_t31"])
-            elif "bright_ti5" in row and row["bright_ti5"]:
-                brilho_bg_k = float(row["bright_ti5"])
-            else:
-                brilho_bg_k = 0.0
-
-            frp = float(row.get("frp", 0.0) or 0.0)
-            daynight = row.get("daynight", "D").strip().upper()
-            versao = row.get("version", "").strip()
-
-            conf_bruta = row.get("confidence")
-            conf_norm = normalizar_confianca(conf_bruta, sensor_clean)
-
-            # Decomposição temporal
-            try:
-                dt = datetime.strptime(f"{acq_date} {acq_time}", "%Y-%m-%d %H%M")
-                ano = dt.year
-                mes = dt.month
-                dia = dt.day
-                semana = dt.isocalendar()[1]
-                dt_iso = dt.strftime("%Y-%m-%dT%H:%M:00Z")
-            except (ValueError, TypeError):
-                dt_iso = f"{acq_date}T{acq_time[:2]}:{acq_time[2:]}:00Z"
-                ano = int(acq_date.split("-")[0]) if "-" in acq_date else 2024
-                mes = int(acq_date.split("-")[1]) if "-" in acq_date else 1
-                dia = int(acq_date.split("-")[2]) if "-" in acq_date else 1
-                semana = 1
-
-            cel_lat, cel_lon = obter_celula_grade(lat, lon, step=0.1)
-
-            registro = {
-                "id": f"{sensor_clean}_{sat_nome}_{lat:.4f}_{lon:.4f}_{acq_date}_{acq_time}_{idx}",
-                "sensor": sensor_clean,
-                "satelite": sat_nome,
-                "codigo_satelite": sat_code,
-                "lat": round(lat, 5),
-                "lon": round(lon, 5),
-                "celula_lat": cel_lat,
-                "celula_lon": cel_lon,
-                "data_hora_utc": dt_iso,
-                "data": acq_date,
-                "hora": acq_time,
-                "ano": ano,
-                "mes": mes,
-                "dia": dia,
-                "semana": semana,
-                "dia_noite": daynight,
-                "confianca": conf_norm,
-                "confianca_pct": round(conf_norm * 100.0, 1),
-                "frp_mw": round(frp, 2),
-                "scan": scan,
-                "track": track,
-                "brilho_k": brilho_k,
-                "brilho_bg_k": brilho_bg_k,
-                "versao": versao,
-            }
-            focos_padronizados.append(registro)
-
-    return focos_padronizados
-
-
-def agregar_em_grade(focos: List[Dict[str, Any]], step: float = 0.1) -> Dict[Tuple[float, float], Dict[str, Any]]:
-    """
-    Agrega uma coleção de focos térmicos em células de uma grade regular.
-
-    Retorna um dicionário indexado por (celula_lat, celula_lon) contendo métricas agregadas
-    como contagem total, contagem por sensor, FRP acumulado, FRP médio e lista de ocorrências.
-    """
-    grade: Dict[Tuple[float, float], Dict[str, Any]] = {}
-
-    for foco in focos:
-        celula = obter_celula_grade(foco["lat"], foco["lon"], step=step)
-
-        if celula not in grade:
-            grade[celula] = {
-                "celula_lat": celula[0],
-                "celula_lon": celula[1],
-                "total_focos": 0,
-                "focos_modis": 0,
-                "focos_viirs": 0,
-                "frp_total_mw": 0.0,
-                "frp_medio_mw": 0.0,
-                "confianca_media": 0.0,
-                "focos": [],
-            }
-
-        bloco = grade[celula]
-        bloco["total_focos"] += 1
-        if foco["sensor"] == "MODIS":
-            bloco["focos_modis"] += 1
-        elif foco["sensor"] == "VIIRS":
-            bloco["focos_viirs"] += 1
-
-        bloco["frp_total_mw"] += foco["frp_mw"]
-        bloco["focos"].append(foco)
-
-    # Cálculo de médias finais por célula
-    for celula, bloco in grade.items():
-        total = bloco["total_focos"]
-        if total > 0:
-            bloco["frp_total_mw"] = round(bloco["frp_total_mw"], 2)
-            bloco["frp_medio_mw"] = round(bloco["frp_total_mw"] / total, 2)
-            soma_conf = sum(f["confianca"] for f in bloco["focos"])
-            bloco["confianca_media"] = round(soma_conf / total, 3)
-
+    grade: dict[tuple[float, float], dict] = {}
+    for f in focos:
+        chave = obter_celula_grade(f["lat"], f["lon"], step)
+        c = grade.setdefault(chave, {"lat": chave[0], "lon": chave[1], "n_modis": 0, "n_viirs": 0,
+                                     "frp_modis_mw": 0.0, "frp_viirs_mw": 0.0, "ids": []})
+        s = f["sensor"].lower()
+        c[f"n_{s}"] += 1
+        c[f"frp_{s}_mw"] += f["frp_mw"]
+        c["ids"].append(f["id"])
     return grade
 
 
-def harmonizar_series(
-    focos_modis: List[Dict[str, Any]],
-    focos_viirs: List[Dict[str, Any]],
-    step: float = 0.1,
-) -> List[Dict[str, Any]]:
+# ----------------------------------------------------------------------------- harmonização
+
+def contagem_harmonizada(n_modis: float, n_viirs: float, ano: int, beta: float = BETA_VIIRS) -> float:
+    """N_harm = N_MODIS (t < 2012) ou N_MODIS + beta * N_VIIRS (t >= 2012)."""
+    if ano < ANO_INICIO_VIIRS:
+        return float(n_modis)
+    return float(n_modis) + beta * float(n_viirs)
+
+
+def frp_harmonizado(frp_modis: float, frp_viirs: float, ano: int) -> float:
+    """FRP_harm = soma FRP MODIS + soma FRP VIIRS (VIIRS só entra a partir de 2012)."""
+    return float(frp_modis) + (float(frp_viirs) if ano >= ANO_INICIO_VIIRS else 0.0)
+
+
+def _chave_tempo(f: dict, periodo: str):
+    d = f["data_hora_utc"].date()
+    if periodo == "dia":
+        return d.isoformat()
+    if periodo == "semana":
+        return f"{f['ano']}-W{f['semana']:02d}"
+    if periodo == "mes":
+        return f"{f['ano']}-{f['mes']:02d}"
+    raise ValueError(f"periodo inválido: {periodo!r} (use dia, semana ou mes)")
+
+
+def harmonizar_series(focos_modis: list[dict], focos_viirs: list[dict], step: float = PASSO_GRADE_GRAUS,
+                      beta: float = BETA_VIIRS, periodo: str = "dia") -> list[dict]:
+    """Funde MODIS e VIIRS por (célula de grade, intervalo de tempo) aplicando a equivalência de contagem e a
+    conservação de FRP. Retorna uma lista ordenada por (tempo, lat, lon) com um registro por célula ativa:
+
+    ``{"celula_id", "lat", "lon", "periodo", "chave_tempo", "data", "ano", "mes", "semana", "n_modis", "n_viirs",
+    "focos_harmonizados", "frp_modis_mw", "frp_viirs_mw", "frp_total_mw"}``
+
+    ``data``/``mes``/``semana`` vêm da primeira detecção do grupo (em ``periodo="dia"`` são exatos). Como
+    N_harm e FRP_harm são lineares, o calendário pode somar registros diários em semanas ou meses sem viés.
+    Focos VIIRS anteriores a 2012 (não deveriam existir) são ignorados.
     """
-    Executa a reconciliação e fusão de dados entre as séries temporais do MODIS e do VIIRS.
+    for f in focos_modis:
+        if f["sensor"] != "MODIS":
+            raise ErroHarmonizacao(f"Foco não-MODIS na lista MODIS: {f['id']}")
+    for f in focos_viirs:
+        if f["sensor"] != "VIIRS":
+            raise ErroHarmonizacao(f"Foco não-VIIRS na lista VIIRS: {f['id']}")
 
-    Formulação de Harmonização:
-    1. Agrupamento espaço-temporal por célula de grade (0.1°) e intervalo semanal/mensal.
-    2. Para a era pré-VIIRS (< 2012):
-       N_harmonizado = N_MODIS
-       FRP_harmonizado = sum(FRP_MODIS)
-    3. Para a era de sobreposição (>= 2012):
-       N_harmonizado = N_MODIS + 0.30 * N_VIIRS
-       FRP_harmonizado = sum(FRP_MODIS) + sum(FRP_VIIRS)
-       (Em células onde apenas o VIIRS detectou fogo, N_harm = 0.30 * N_VIIRS).
-    """
-    # Mapeamento chave espaço-temporal -> {'modis': [...], 'viirs': [...]}
-    agrupamento: Dict[Tuple[int, int, int, float, float], Dict[str, List[Dict[str, Any]]]] = {}
+    grupos: dict[tuple, list[dict]] = defaultdict(list)
+    for f in [*focos_modis, *focos_viirs]:
+        if f["sensor"] == "VIIRS" and f["ano"] < ANO_INICIO_VIIRS:
+            continue
+        grupos[(_chave_tempo(f, periodo), *obter_celula_grade(f["lat"], f["lon"], step))].append(f)
 
-    for foco in focos_modis:
-        cel = obter_celula_grade(foco["lat"], foco["lon"], step=step)
-        chave = (foco["ano"], foco["mes"], foco["semana"], cel[0], cel[1])
-        if chave not in agrupamento:
-            agrupamento[chave] = {"modis": [], "viirs": []}
-        agrupamento[chave]["modis"].append(foco)
-
-    for foco in focos_viirs:
-        cel = obter_celula_grade(foco["lat"], foco["lon"], step=step)
-        chave = (foco["ano"], foco["mes"], foco["semana"], cel[0], cel[1])
-        if chave not in agrupamento:
-            agrupamento[chave] = {"modis": [], "viirs": []}
-        agrupamento[chave]["viirs"].append(foco)
-
-    resultados_harmonizados: List[Dict[str, Any]] = []
-
-    for (ano, mes, semana, cel_lat, cel_lon), grupos in agrupamento.items():
-        lista_modis = grupos["modis"]
-        lista_viirs = grupos["viirs"]
-
-        n_modis = len(lista_modis)
-        n_viirs = len(lista_viirs)
-
-        frp_modis = sum(f["frp_mw"] for f in lista_modis)
-        frp_viirs = sum(f["frp_mw"] for f in lista_viirs)
-
-        frp_harmonizado = round(frp_modis + frp_viirs, 2)
-
-        if ano >= 2012:
-            era = "SOBREPOSICAO_MODIS_VIIRS"
-            fator_viirs = FATOR_ESCALA_VIIRS_MODIS
-            if n_modis > 0 and n_viirs > 0:
-                n_harmonizado = round(n_modis + (fator_viirs * n_viirs), 2)
-            elif n_modis > 0:
-                n_harmonizado = float(n_modis)
-            else:
-                n_harmonizado = round(fator_viirs * n_viirs, 2)
-        else:
-            era = "HISTORICO_MODIS_EXCLUSIVO"
-            fator_viirs = 0.0
-            n_harmonizado = float(n_modis)
-
-        confiancas = [f["confianca"] for f in lista_modis + lista_viirs]
-        conf_media = round(sum(confiancas) / len(confiancas), 2) if confiancas else 0.5
-
-        registro_harm = {
+    saida: list[dict] = []
+    for (chave_t, lat_c, lon_c), focos in grupos.items():
+        primeiro = min(focos, key=lambda x: x["data_hora_utc"])
+        ano = primeiro["ano"]
+        n_m = sum(1 for f in focos if f["sensor"] == "MODIS")
+        n_v = sum(1 for f in focos if f["sensor"] == "VIIRS")
+        frp_m = sum(f["frp_mw"] for f in focos if f["sensor"] == "MODIS")
+        frp_v = sum(f["frp_mw"] for f in focos if f["sensor"] == "VIIRS")
+        saida.append({
+            "celula_id": f"{lat_c:+.2f}_{lon_c:+.2f}",
+            "lat": lat_c,
+            "lon": lon_c,
+            "periodo": periodo,
+            "chave_tempo": chave_t,
+            "data": primeiro["data_hora_utc"].date().isoformat(),
             "ano": ano,
-            "mes": mes,
-            "semana": semana,
-            "celula_lat": cel_lat,
-            "celula_lon": cel_lon,
-            "focos_harmonizados": n_harmonizado,
-            "focos_modis": n_modis,
-            "focos_viirs": n_viirs,
-            "frp_harmonizado_mw": frp_harmonizado,
-            "frp_modis_mw": round(frp_modis, 2),
-            "frp_viirs_mw": round(frp_viirs, 2),
-            "confianca_media": conf_media,
-            "era": era,
-            "fator_escala_viirs": fator_viirs,
-            "total_registros_brutos": n_modis + n_viirs,
-        }
-        resultados_harmonizados.append(registro_harm)
+            "mes": primeiro["mes"],
+            "semana": primeiro["semana"],
+            "n_modis": n_m,
+            "n_viirs": n_v,
+            "focos_harmonizados": round(contagem_harmonizada(n_m, n_v, ano, beta), 4),
+            "frp_modis_mw": round(frp_m, 4),
+            "frp_viirs_mw": round(frp_v, 4),
+            "frp_total_mw": round(frp_harmonizado(frp_m, frp_v, ano), 4),
+        })
+    saida.sort(key=lambda r: (r["chave_tempo"], r["lat"], r["lon"]))
+    return saida
 
-    # Ordena por ano, semana, latitude, longitude
-    resultados_harmonizados.sort(key=lambda r: (r["ano"], r["semana"], r["celula_lat"], r["celula_lon"]))
-    return resultados_harmonizados
+
+def resumo_harmonizacao(harm: list[dict]) -> dict:
+    """Totais da série harmonizada (para log/CLI)."""
+    return {
+        "registros": len(harm),
+        "celulas": len({r["celula_id"] for r in harm}),
+        "n_modis": sum(r["n_modis"] for r in harm),
+        "n_viirs": sum(r["n_viirs"] for r in harm),
+        "focos_harmonizados": round(sum(r["focos_harmonizados"] for r in harm), 4),
+        "frp_total_mw": round(sum(r["frp_total_mw"] for r in harm), 4),
+    }
+
+
+def exportar_harmonizacao(harm: list[dict], caminho_saida: Path) -> Path:
+    """Grava a série harmonizada em ``.csv`` ou ``.json`` (decidido pela extensão)."""
+    caminho_saida = Path(caminho_saida)
+    caminho_saida.parent.mkdir(parents=True, exist_ok=True)
+    if caminho_saida.suffix.lower() == ".json":
+        caminho_saida.write_text(json.dumps({"resumo": resumo_harmonizacao(harm), "registros": harm},
+                                            ensure_ascii=False, indent=2), encoding="utf-8")
+    else:
+        campos = list(harm[0].keys()) if harm else ["celula_id"]
+        with caminho_saida.open("w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=campos)
+            w.writeheader()
+            w.writerows(harm)
+    return caminho_saida
+
+
+AMOSTRA_MODIS = Path(__file__).resolve().parents[2] / "data" / "samples_firms" / "modis_sample_c6.csv"
+AMOSTRA_VIIRS = Path(__file__).resolve().parents[2] / "data" / "samples_firms" / "viirs_sample_375m.csv"
+
+
+def harmonizar_amostra(periodo: str = "dia") -> list[dict]:
+    """Atalho: harmoniza os CSVs de AMOSTRA em ``data/samples_firms/`` (dados de amostra, não observações reais)."""
+    return harmonizar_series(carregar_e_padronizar_focos(AMOSTRA_MODIS, "MODIS"),
+                             carregar_e_padronizar_focos(AMOSTRA_VIIRS, "VIIRS"), periodo=periodo)
+
+
+if __name__ == "__main__":
+    h = harmonizar_amostra()
+    print(json.dumps(resumo_harmonizacao(h), indent=2))
