@@ -1,0 +1,31 @@
+1
+00:00:00,000 --> 00:00:03,000
+Hi, we're Team ECOMP-UFSM, from Brazil.
+
+2
+00:00:03,000 --> 00:00:08,000
+NASA has watched fires from space since 2000,
+but MODIS and VIIRS count them differently.
+
+3
+00:00:08,000 --> 00:00:10,000
+This is FocoCerto Harmonizer.
+
+4
+00:00:10,000 --> 00:00:15,000
+We put both sensors on one grid
+and build a Fire Activity Calendar:
+
+5
+00:00:15,000 --> 00:00:20,000
+every week compared with its own history,
+critical weeks in red.
+
+6
+00:00:20,000 --> 00:00:28,000
+When a week turns critical, our agents draft
+a brigade dispatch plan for the coordinator to approve.
+
+7
+00:00:28,000 --> 00:00:30,000
+From NASA data to crews on the ground.
