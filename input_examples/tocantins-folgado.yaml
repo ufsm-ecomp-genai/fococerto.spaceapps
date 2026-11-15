@@ -1,0 +1,29 @@
+# Bases: localização REAL com fonte (config/regioes/tocantins_bases_oficiais.csv, camada "oficial" — CBMTO,
+# Prevfogo/Ibama Portaria nº 114/2024, ICMBio; coordenada = sede do município no GeoNames, exceto Palmas, que é o
+# quartel do OSM node/5067657890). Ressalva: algumas companhias do CBMTO foram reorganizadas em 2023; cada base
+# "existe segundo a fonte citada" no CSV.
+# QUANTIDADES SIMULADAS (simulado: true): quantas equipes/aeronaves há em cada base é cenário, não inventário real.
+# Referência pública para o tamanho: brigada Prevfogo = 1 chefe + 2 chefes de esquadrão + 10 brigadistas ≈ 2 equipes.
+# Cenário FOLGADO: 16 recursos, reserva de 2.
+regiao: tocantins
+periodo: "2026-10-23"
+simulado: true   # as QUANTIDADES são simuladas; as bases vêm do repositório (lista oficial + OSM), sem bases declaradas
+reserva: 2
+notas: []
+recursos:
+  - {id: palmas-t1,       base_id: osm_n5067657890,         tipo: terrestre, capacidade: 1, disponivel: true}
+  - {id: palmas-t2,       base_id: osm_n5067657890,         tipo: terrestre, capacidade: 1, disponivel: true}
+  - {id: palmas-t3,       base_id: osm_n5067657890,         tipo: terrestre, capacidade: 1, disponivel: true}
+  - {id: palmas-a1,       base_id: osm_n5067657890,         tipo: aereo,     capacidade: 1, disponivel: true}
+  - {id: palmas-a2,       base_id: osm_n5067657890,         tipo: aereo,     capacidade: 1, disponivel: true}
+  - {id: portonac-t1,     base_id: cbmto_porto_nacional,    tipo: terrestre, capacidade: 1, disponivel: true}
+  - {id: paraiso-t1,      base_id: cbmto_paraiso,           tipo: terrestre, capacidade: 1, disponivel: true}
+  - {id: gurupi-t1,       base_id: cbmto_gurupi,            tipo: terrestre, capacidade: 1, disponivel: true}
+  - {id: gurupi-t2,       base_id: cbmto_gurupi,            tipo: terrestre, capacidade: 1, disponivel: true}
+  - {id: dianopolis-t1,   base_id: cbmto_dianopolis,        tipo: terrestre, capacidade: 1, disponivel: true}
+  - {id: saofelix-t1,     base_id: prevfogo_sao_felix,      tipo: terrestre, capacidade: 1, disponivel: true}
+  - {id: saofelix-t2,     base_id: prevfogo_sao_felix,      tipo: terrestre, capacidade: 1, disponivel: true}
+  - {id: santatereza-t1,  base_id: prevfogo_santa_tereza,   tipo: terrestre, capacidade: 1, disponivel: true}
+  - {id: itacaja-t1,      base_id: prevfogo_itacaja,        tipo: terrestre, capacidade: 1, disponivel: true}
+  - {id: arraias-t1,      base_id: prevfogo_arraias,        tipo: terrestre, capacidade: 1, disponivel: true}
+  - {id: colinas-t1,      base_id: cbmto_colinas,           tipo: terrestre, capacidade: 1, disponivel: true}
