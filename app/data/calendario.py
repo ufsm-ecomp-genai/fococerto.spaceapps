@@ -62,6 +62,16 @@ def percentil(valores: list[float], p: float) -> float:
     return float(v[lo] + (v[hi] - v[lo]) * (pos - lo))
 
 
+def calcular_percentil(valores: list[float], p: float) -> float:
+    """Nome da primeira versão (main) para ``percentil``."""
+    return round(percentil(valores, p), 2)
+
+
+def calcular_mad(valores: list[float], mediana_ref: float) -> float:
+    """Desvio absoluto mediano (MAD) em torno de ``mediana_ref`` (primeira versão, main)."""
+    return round(mediana([abs(x - mediana_ref) for x in valores]), 2) if valores else 0.0
+
+
 def sigma_robusto(valores: list[float], centro: float) -> float:
     """1.4826 * MAD; se MAD = 0 (base muito concentrada), usa 1.2533 * desvio médio absoluto; se ainda 0, 1.0."""
     if not valores:
@@ -132,13 +142,13 @@ def construir_matriz_temporal(focos_harm: list[dict], ano_inicio: int = 2000, an
             continue
         p = int(r["mes"]) if periodo == "mes" else min(int(r["semana"]), 52)
         a = acum[(ano, p)]
-        a["n_modis"] += r.get("n_modis", 0)
-        a["n_viirs"] += r.get("n_viirs", 0)
+        a["n_modis"] += r.get("n_modis", r.get("focos_modis", 0))
+        a["n_viirs"] += r.get("n_viirs", r.get("focos_viirs", 0))
         if "frp_modis_mw" in r or "frp_viirs_mw" in r:
             a["frp_modis"] += r.get("frp_modis_mw", 0.0)
             a["frp_viirs"] += r.get("frp_viirs_mw", 0.0)
         else:
-            a["frp_modis"] += r.get("frp_total_mw", 0.0)
+            a["frp_modis"] += r.get("frp_total_mw", r.get("frp_harmonizado_mw", 0.0))
 
     # valores harmonizados de toda a grade (ausência de foco = 0 detecções, se o período já foi observado)
     def observado(ano: int, p: int) -> bool:
@@ -197,6 +207,7 @@ def construir_matriz_temporal(focos_harm: list[dict], ano_inicio: int = 2000, an
         "ano_inicio_viirs": ANO_INICIO_VIIRS,
         "gerado_em_utc": datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
         "resumo_status": resumo,
+        "total_periodos": len(matriz),
         "matriz": matriz,
     }
 

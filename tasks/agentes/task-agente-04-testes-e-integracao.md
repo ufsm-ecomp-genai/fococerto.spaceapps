@@ -21,7 +21,7 @@ Garantir que a suíte de testes automatizados com `pytest` cubra os novos módul
   * Agregação em células de grade uniforme.
   * Equivalência de contagem e conservação de FRP.
   * Detecção correta de períodos anômalos.
-- [ ] Testar a CLI local:
+- [x] Testar a CLI local:
   ```bash
   python3 -m app.cli run --sample --regiao tocantins
   ```

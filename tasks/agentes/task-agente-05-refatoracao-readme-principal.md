@@ -26,8 +26,8 @@ Reescrever o [`README.md`](file:///home/dorneles/ecomp-ufsm-genai/fococerto-spac
 ---
 
 ### 3. Checklist de Execução
-- [ ] Atualizar cabeçalho e badges
-- [ ] Escrever a seção de Prior Work conforme regulamento da NASA
-- [ ] Descrever a arquitetura de harmonização com diagrama Mermaid
-- [ ] Validar que todos os links apontam para `fococerto.spaceapps.git` e `docs/spaceapps/`
-- [ ] Garantir texto 100% em Inglês fluído e profissional
+- [x] Atualizar cabeçalho e badges
+- [x] Escrever a seção de Prior Work conforme regulamento da NASA
+- [x] Descrever a arquitetura de harmonização com diagrama Mermaid
+- [x] Validar que todos os links apontam para `fococerto.spaceapps.git` e `docs/spaceapps/`
+- [x] Garantir texto 100% em Inglês fluído e profissional

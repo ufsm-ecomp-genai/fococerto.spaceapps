@@ -215,9 +215,10 @@ Other examples: pre-existing dispatch plans in [`output_examples/`](output_examp
 ## Tests
 
 ```bash
-python -m pytest tests/test_harmonizacao.py -v   # 27 tests: CSV parsing, confidence mapping, grid, count equivalence,
+python -m pytest tests/test_harmonizacao.py tests/test_harmonizacao_api_v1.py -v
+                                                 # 36 tests: CSV parsing, confidence mapping, grid, count equivalence,
                                                  # FRP conservation, anomaly detection, JSON contract, CLI
-python -m pytest -q                              # whole suite: 352 passed, 7 skipped (15 Nov 2026), ~20 s, offline
+python -m pytest -q                              # whole suite: 361 passed, 7 skipped (15 Nov 2026), ~20 s, offline
 cd web/app && npm test && npm run build          # web unit tests and production build
 ```
 No test needs an API key or internet access.
@@ -233,9 +234,10 @@ NASA Space Apps allows pre-existing work if it is declared. This repository star
 | | What | Where |
 |---|---|---|
 | **Pre-existing work** | Multi-agent operational reasoning engine (Planner ⇄ Critic ⇄ Analyst loop with deterministic tools, rules and citation checks), region configs and dispatch scenarios, plan/map outputs, HTTP API, and the base web interface (map, resources, history, help) | `app/agents/`, `app/tools/`, `app/core/`, `app/llm/`, `app/output/`, `app/api.py`, `services/`, `eval/`, most of `web/app/src/`; original README: [`docs/prior-work/operational-engine.md`](docs/prior-work/operational-engine.md) |
-| **New work during Space Apps** | MODIS (1 km) vs VIIRS (375 m) footprint harmonization on a 0.1° grid; count equivalence and FRP conservation; 26-year (2000–2026) time-series engine with median/MAD baseline, Z_fire, P90/P95 and status; the Fire Activity Calendar web component; the `calendario` / `--calendario` / `--harmonizar` CLI; FIRMS sample datasets, scientific dossier and tests | `app/data/harmonizacao.py`, `app/data/calendario.py`, `web/app/src/FireCalendar.jsx`, `web/app/src/fireCalendar.css`, `tests/test_harmonizacao.py`, `data/samples_firms/`, `docs/spaceapps/`, `CONTEXT.md` |
+| **New work during Space Apps** | MODIS (1 km) vs VIIRS (375 m) footprint harmonization on a 0.1° grid; count equivalence and FRP conservation; 26-year (2000–2026) time-series engine with median/MAD baseline, Z_fire, P90/P95 and status; the Fire Activity Calendar web component; the `calendario` / `--calendario` / `--harmonizar` CLI; FIRMS sample datasets, scientific dossier and tests | `app/data/harmonizacao.py`, `app/data/calendario.py`, `web/app/src/FireCalendar.jsx`, `web/app/src/fireCalendar.css`, `tests/test_harmonizacao.py`, `tests/test_harmonizacao_api_v1.py`, `data/samples_firms/`, `docs/spaceapps/`, `CONTEXT.md` |
 
-The exact boundary is in the git history. AI tools: code, tests and documentation were written with the help of
+The exact boundary is in the git history; the formal declaration is in [`PRIOR_WORK.md`](PRIOR_WORK.md) and
+[`docs/spaceapps/02-regras-e-diretrizes/declaracao-prior-work.md`](docs/spaceapps/02-regras-e-diretrizes/declaracao-prior-work.md). AI tools: code, tests and documentation were written with the help of
 **Claude Code (Anthropic)**; the team reviewed and tested the result and is responsible for it.
 
 ---
