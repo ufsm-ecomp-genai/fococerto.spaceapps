@@ -16,16 +16,16 @@ Garantir que a suíte de testes automatizados com `pytest` cubra os novos módul
 ---
 
 ### 3. Checklist de Implementação
-- [ ] Criar `tests/test_harmonizacao.py` com testes para:
+- [x] Criar `tests/test_harmonizacao.py` com testes para:
   * Leitura e padronização dos CSVs de MODIS e VIIRS.
   * Agregação em células de grade uniforme.
   * Equivalência de contagem e conservação de FRP.
   * Detecção correta de períodos anômalos.
 - [ ] Testar a CLI local:
   ```bash
-  python3 -m app.cli --sample --cenario tocantins-escasso
+  python3 -m app.cli run --sample --regiao tocantins
   ```
-- [ ] Executar o pytest completo:
+- [x] Executar o pytest completo:
   ```bash
   pytest tests/test_harmonizacao.py -v
   ```

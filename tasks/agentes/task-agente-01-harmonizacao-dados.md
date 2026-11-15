@@ -22,11 +22,11 @@ Construir o módulo Python [`app/data/harmonizacao.py`](file:///home/dorneles/ec
 ---
 
 ### 3. Checklist de Implementação
-- [ ] Criar função `carregar_e_padronizar_focos(caminho_csv: Path, sensor: str) -> list[dict]`
-- [ ] Tratar mapeamento de `confidence` (MODIS numérico 0-100; VIIRS strings `low`/`nominal`/`high`)
-- [ ] Criar função de discretização em grade `agregar_em_grade(focos: list[dict], step: float = 0.1) -> dict`
-- [ ] Criar função `harmonizar_series(focos_modis: list[dict], focos_viirs: list[dict]) -> list[dict]`
-- [ ] Exportar resultado consolidado para teste
+- [x] Criar função `carregar_e_padronizar_focos(caminho_csv: Path, sensor: str) -> list[dict]`
+- [x] Tratar mapeamento de `confidence` (MODIS numérico 0-100; VIIRS strings `low`/`nominal`/`high`)
+- [x] Criar função de discretização em grade `agregar_em_grade(focos: list[dict], step: float = 0.1) -> dict`
+- [x] Criar função `harmonizar_series(focos_modis: list[dict], focos_viirs: list[dict]) -> list[dict]`
+- [x] Exportar resultado consolidado para teste
 
 ---
 

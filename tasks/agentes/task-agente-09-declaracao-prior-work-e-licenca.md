@@ -25,6 +25,6 @@ Garantir 100% de conformidade com as regras de submissão do NASA Space Apps Cha
 ---
 
 ### 4. Checklist de Execução
-- [ ] Criar arquivo `LICENSE` na raiz
-- [ ] Criar `declaracao-prior-work.md` em `docs/spaceapps/02-regras-e-diretrizes/`
-- [ ] Vincular a declaração no `README.md` principal
+- [x] Criar arquivo `LICENSE` na raiz
+- [x] Criar `declaracao-prior-work.md` em `docs/spaceapps/02-regras-e-diretrizes/`
+- [x] Criar `PRIOR_WORK.md` na raiz e vincular no projeto

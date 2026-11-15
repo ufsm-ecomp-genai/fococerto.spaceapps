@@ -22,11 +22,11 @@ Construir o módulo Python [`app/data/calendario.py`](file:///home/dorneles/ecom
 ---
 
 ### 3. Checklist de Implementação
-- [ ] Criar função `construir_matriz_temporal(focos_harm: list[dict], ano_inicio=2000, ano_fim=2026) -> dict`
-- [ ] Calcular mediana, $P_{90}$ e $P_{95}$ para cada período do ano
-- [ ] Atribuir status de anomalia a cada célula do calendário
-- [ ] Criar função `exportar_calendario_json(dados_matriz: dict, caminho_saida: Path) -> None`
-- [ ] Salvar a saída estruturada em `web/app/src/assets/dados_calendario.json` para consumo do frontend
+- [x] Criar função `construir_matriz_temporal(focos_harm: list[dict], ano_inicio=2000, ano_fim=2026) -> dict`
+- [x] Calcular mediana, $P_{90}$ e $P_{95}$ para cada período do ano
+- [x] Atribuir status de anomalia a cada célula do calendário
+- [x] Criar função `exportar_calendario_json(dados_matriz: dict, caminho_saida: Path) -> None`
+- [x] Salvar a saída estruturada em `web/app/src/assets/dados_calendario.json` para consumo do frontend
 
 ---
 
