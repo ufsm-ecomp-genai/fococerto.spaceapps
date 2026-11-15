@@ -13,12 +13,20 @@ só quando o subcomando precisa deles. Se algum ainda não existir, a CLI diz qu
 """
 from __future__ import annotations
 
+import sys
+
+if __name__ == "__main__":
+    # --calendario / --harmonizar (task A-07) só usam a biblioteca padrão: despacha antes de importar o motor
+    # (pydantic, langgraph...), para rodarem até num python3 sem as dependências instaladas.
+    from app import cli_calendario as _cli_calendario
+    if _cli_calendario.deve_tratar(sys.argv[1:]):
+        sys.exit(_cli_calendario.main(sys.argv[1:]))
+
 import argparse
 import getpass
 import importlib
 import json
 import os
-import sys
 import time
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -413,13 +421,18 @@ def montar_parser() -> argparse.ArgumentParser:
     comum.add_argument("--pasta-logs", default=str(RAIZ / "logs"), help=argparse.SUPPRESS)
 
     p = argparse.ArgumentParser(prog="python -m app.cli",
-                                description="FocoCerto: prioridades e ordem de recursos entre incêndios simultâneos.")
-    sub = p.add_subparsers(dest="comando", metavar="{run,nota,aprovar,avaliar}")
+                                description="FocoCerto: prioridades e ordem de recursos entre incêndios simultâneos.",
+                                epilog="Harmonização MODIS/VIIRS e Fire Activity Calendar: "
+                                       "python3 -m app.cli --sample --harmonizar | --calendario [--regiao tocantins] "
+                                       "(ou: python3 -m app.cli calendario --help)")
+    sub = p.add_subparsers(dest="comando", metavar="{run,nota,aprovar,avaliar,calendario,harmonizar}")
 
     r = sub.add_parser("run", parents=[comum], help="executa um período e gera plano.json, plano.md e mapa.html")
     r.add_argument("--regiao", default=None, help="região (config/regioes/<regiao>.yaml); padrão no --sample: tocantins")
     r.add_argument("--periodo", help="YYYY-MM-DD (padrão: o período do cenário)")
     r.add_argument("--recursos", help="cenarios/<nome>.yaml (padrão: o primeiro cenarios/<regiao>-*.yaml)")
+    r.add_argument("--cenario", default=None,
+                   help="atalho para --recursos cenarios/<cenario>.yaml")
     r.add_argument("--idioma", default=None,
                    help="idioma do plano inteiro: pt-BR ou en (aceita pt, en-US...); padrão: FOCOCERTO_IDIOMA ou o "
                         "idioma do YAML da região")
@@ -455,6 +468,9 @@ def main(argv: list[str] | None = None) -> int:
     config.carregar_env()
     parser = montar_parser()
     argv = list(sys.argv[1:] if argv is None else argv)
+    from app import cli_calendario
+    if cli_calendario.deve_tratar(argv):
+        return cli_calendario.main(argv)
     # Aceita também "python -m app.cli --sample" (spec, seção 9): vira "run --sample".
     if argv and argv[0] == "--sample":
         argv = ["run", *argv]
@@ -466,6 +482,9 @@ def main(argv: list[str] | None = None) -> int:
         if not modo_sample(args):
             parser.error("run: --regiao é obrigatório fora do --sample")
         args.regiao = "tocantins"
+    if getattr(args, "cenario", None) and not args.recursos:
+        nome = args.cenario
+        args.recursos = nome if nome.endswith((".yaml", ".yml")) else str(RAIZ / "cenarios" / f"{nome}.yaml")
     try:
         return args.func(args)
     except ErroCLI as e:
