@@ -18,10 +18,10 @@ Produzir um vídeo de demonstração dinâmico com **duração estrita de até 3
 ---
 
 ### 3. Checklist de Execução
-- [ ] Gravar 10 a 15 segundos da tela do Web App rodando (navegando no calendário).
-- [ ] Gravar a locução de áudio (em inglês claro ou em português com legendas em inglês obrigatórias).
-- [ ] Juntar no editor de vídeo (CapCut, Premiere, DaVinci ou Clipchamp) garantindo tempo total $\le 30$ segundos.
-- [ ] Exportar em 1080p MP4.
-- [ ] Fazer upload no **YouTube** (como "Não Listado" ou "Público") ou Google Drive (com permissão pública).
-- [ ] Testar se o link do vídeo toca normalmente em janela anônima do navegador.
-- [ ] Entregar o link público para a Task Humana 03.
+- [x] Gravar 10 a 15 segundos da tela do Web App rodando (navegando no calendário).
+- [x] Gravar a locução de áudio (em inglês claro ou em português com legendas em inglês obrigatórias).
+- [x] Juntar no editor de vídeo (CapCut, Premiere, DaVinci ou Clipchamp) garantindo tempo total $\le 30$ segundos.
+- [x] Exportar em 1080p MP4.
+- [x] Fazer upload no **YouTube** (como "Não Listado" ou "Público") ou Google Drive (com permissão pública).
+- [x] Testar se o link do vídeo toca normalmente em janela anônima do navegador.
+- [x] Entregar o link público para a Task Humana 03.

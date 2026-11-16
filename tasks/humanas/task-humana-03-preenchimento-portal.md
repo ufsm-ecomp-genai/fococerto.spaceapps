@@ -24,11 +24,11 @@ Consulte o arquivo oficial com os textos completos:
 ---
 
 ### 3. Checklist de Execução
-- [ ] Fazer login no portal `spaceappschallenge.org`.
-- [ ] Acessar "Minha Equipe" $\to$ aba "Projeto" $\to$ clicar no botão azul "Editar".
-- [ ] Ativar o botão de bloqueio de edição enquanto edita.
-- [ ] Colar todos os campos textuais em inglês.
-- [ ] Inserir o link público da demonstração.
-- [ ] Inserir o link do repositório GitHub.
-- [ ] Clicar no botão azul **"Salvar Progresso"**.
-- [ ] Avisar a equipe para a auditoria final (Task Humana 04).
+- [x] Fazer login no portal `spaceappschallenge.org`.
+- [x] Acessar "Minha Equipe" $\to$ aba "Projeto" $\to$ clicar no botão azul "Editar".
+- [x] Ativar o botão de bloqueio de edição enquanto edita.
+- [x] Colar todos os campos textuais em inglês.
+- [x] Inserir o link público da demonstração.
+- [x] Inserir o link do repositório GitHub.
+- [x] Clicar no botão azul **"Salvar Progresso"**.
+- [x] Avisar a equipe para a auditoria final (Task Humana 04).

@@ -1,91 +1,51 @@
+# Desafio Oficial NASA Space Apps 2026
+## Harmonization of MODIS and VIIRS Hot Spots (Desafio 15)
 
-The NASA Space Apps Challenge is happening now! 🎉
-Have a question? Join us on Space Apps Connect.
+**Categoria:** Earth Science / Software  
+**Nível de Dificuldade:** Advanced / Intermediate  
+**Agências Parceiras:** NASA & CONAE (Comisión Nacional de Actividades Espaciales, Argentina)  
 
-Space Apps Logo 2026 color
-About Us
-Awards
-Explore the Hackathon
+---
 
-avatar.20:44:30.019382
-Home
-2026 NASA Space Apps Challenge
-2026 Challenges
-MODIS-and-VIIRS-hot-spots
-15 - Harmonization of MODIS and VIIRS Hot Spots_4.3
-Harmonization of MODIS and VIIRS Hot Spots
-Join the Challenge
-DetailsResourcesTeams
-Event
-2026 NASA Space Apps Challenge
-Difficulty
-Advanced
-Intermediate
-Subjects
-Earth Science
-Software
-Understanding how burning activity is distributed across our planet over time, including wildfires and agricultural burns intense enough to be detected by satellite sensors, enables us to anticipate critical periods, guide monitoring efforts, and improve fire response. Satellites have tracked active fire hotspots for more than two decades, but the record is split across sensors whose data cannot be compared directly, leaving fire managers without a consistent picture of when and where burning has occurred. Your challenge is to build a web application that harmonizes these records into a burning activity calendar based on active fire hotspots, enabling early warning and emergency responders, scientists, and land managers to examine historical fire patterns, unusual conditions, and critical periods within a selected area of interest.
+### 1. Resumo do Desafio (Challenge Statement)
 
+Compreender como a atividade de queimadas se distribui pelo planeta ao longo do tempo — incluindo incêndios florestais e queimadas agrícolas intensas o suficiente para serem detectadas por sensores orbitais — permite antecipar períodos críticos, orientar esforços de monitoramento e melhorar a resposta a emergências.
 
-Background
-Fire regimes
+Satélites rastreiam anomalias térmicas (*hot spots*) há mais de duas décadas, mas o registro histórico está dividido entre sensores cujos dados não podem ser comparados diretamente (MODIS e VIIRS), deixando os gestores sem uma visão histórica consistente.
 
-Some ecosystems need periodic fires to maintain their function and their structure. However, changes in fire intensity, extent, and frequency can have negative impacts on climate, society, and biodiversity, along with the ecosystem services they provide. Fires can also cause loss of life and properties, degradation of health, and acute risk to fire managers.
+**O Desafio:** Construir uma aplicação web que harmonize esses registros em um **Calendário de Atividade de Fogo (Burning Activity Calendar)** baseado em focos de calor ativos, permitindo que socorristas, cientistas e gestores ambientais examinem padrões históricos de fogo, condições incomuns e períodos críticos em uma área de interesse selecionada.
 
-Because humans have modified global patterns of vegetation, ignition, and climate over millennia, fires on both local and global scales are increasingly human-related.
+---
 
-Burning activity involves wildfires in natural vegetation and forested areas, as well as anthropogenic fires associated with agriculture, land-clearing, waste disposal, and industrial activities. It is one of the many dynamic phenomena that can be detected with remote sensing.
+### 2. Contexto Científico (Background)
 
-Satellite fire detection and monitoring
+#### Regimes de Fogo
+Alguns ecossistemas necessitam de fogo periódico para manter sua função e estrutura ecológica. No entanto, mudanças na intensidade, extensão e frequência do fogo causam impactos negativos severos no clima, na sociedade e na biodiversidade. Com o avanço das mudanças climáticas, condições meteorológicas propícias ao fogo (*fire weather*) tornam-se cada vez mais comuns e extremas.
 
-Climate models project that fire weather will become more common and more intense. Earth Observation (EO) satellites provide technological solutions for early detection, rapid response, and postfire assessment, measuring thermal radiation and smoke across regional to global scales.
+#### Detecção e Monitoramento por Satélite
+Satélites de Observação da Terra (EO) operando no infravermelho médio (MIR) e termal (TIR) detectam a radiação emitida pela combustão ativa na superfície terrestre. Sensores como MODIS e VIIRS fornecem detecção de anomalias térmicas em tempo quase real (NRT).
 
-Detecting hotspots on Earth's surface
+#### A Descontinuidade MODIS vs. VIIRS
+* **MODIS (Terra e Aqua):** Fornece mais de duas décadas de observações contínuas desde 2000 (resolução espacial de 1 km), mas seus satélites estão sofrendo deriva orbital e se aproximando do fim da vida operacional.
+* **VIIRS (Suomi-NPP, NOAA-20, NOAA-21):** É o sucessor operacional com resolução espacial de 375 m (área de pixel ~7.1x menor), detectando cerca de 3x a 4x mais focos para o mesmo evento.
+* **O Problema:** Os registros não podem ser comparados diretamente sem uma metodologia formal de harmonização espacial, calibração radiativa e reconciliação temporal.
 
-EO satellites provide information on fire location, intensity, and temporal evolution. Satellite sensors operating in the thermal infrared (TIR) range can detect hotspots on the Earth's surface generated by urban and wildfires, volcanic eruptions, and industrial processes such as gas flares in oil and gas operations.
+---
 
-For active fires, detection and monitoring rely mainly on mid-infrared (MIR) and TIR measurements, where active combustion produces its stronger signal. Sensors such as MODIS and VIIRS provide real-time thermal anomaly detection, enabling early hotspot identification and the assessment of burned areas.
+### 3. Objetivos do Projeto (Objectives)
 
-Burn activity calendars
+O desafio divide-se em duas grandes frentes integradas:
 
-Using satellite-detected hotspots, fire activity calendars can be developed by integrating historical information with recent data, allowing for the rapid visual identification of seasonal patterns, anomalies, and trends in each region.
+1. **Harmonização de Dados MODIS + VIIRS:**
+   * Agregar e compatibilizar as observações do NASA FIRMS de modo que o sensor de origem seja reconciliado e a análise de tendências, padrões e anomalias torne-se contínua de 2000 até o presente.
+2. **Aplicação Web Interativa (Fire Activity Calendar):**
+   * Desenvolver uma ferramenta visual onde o usuário seleciona uma região (AOI) e visualiza uma matriz temporal (anos × semanas/meses).
+   * Identificar visualmente desvios em relação à mediana histórica multi-anual e sinalizar períodos críticos de anomalia extrema.
+   * Oferecer exportação dos dados harmonizados e filtrados em formato tabular (CSV).
 
-MODIS sensors on board Terra and Aqua satellites provide more than two decades of observations, but they are approaching the end of their operational life and are being replaced by VIIRS sensors. Their records cannot be directly compared without harmonization, since MODIS and VIIRS have different spatial resolutions, sensitivities, and observation schedules.
+---
 
-Therein lies the root of the challenge. As fire frequency and intensity increase, emergency managers benefit from an updated and consistent hotspot calendar that enables them to rapidly visualize, for example, which month and years had the highest fire activity, and compare the burning activity of the current month against the historical median for a selected area.
-
-You may consider harmonizing NASA Earthdata FIRMS hotspots, combining the extensive historical series of MODIS with the continuity and greater detail of VIIRS.
-
-Emergency managers could then use the web application to monitor sensitive regions, recognize changes relative to historical patterns, and strengthen fire forecasting and response.
-
-Objectives
-Your challenge is to develop a harmonized burning activity calendar based on active fire hotspots in a web application, combining the extensive historical series of MODIS with the continuity and greater detail of VIIRS to provide a consistent time series of hotspot activity.
-
-This challenge could be approached in two parts. The first is MODIS and VIIRS hotspot harmonization, so that by the end of that phase the sensor of origin no longer matters and the patterns, trends, and anomalies become the focus.
-
-The second involves developing a web application that takes harmonized hotspot data as input. Through this visual tool, a user could select a region and a specific date range, then download analytics and visualizations of fire activity.
-
-A calendar of burning activity showing the number of hotspots detected from the early 2000s to the present, built on the harmonized hotspots dataset and integrated into the web application, would give emergency managers a view of the fire history of an area: which periods of the year see more fires, which years had more burning activity, and how a current fire compares with previous ones.
-
-In addition to numerical information, you could consider how color ramps might represent similarities and differences in the number of detected hotspots across months, providing an accessible and intuitive way to visualize fire activity. A downloadable CSV File of hot spots detected during a search would be another useful output.
-
-Potential Considerations
-You may (but are not required to) consider the following:
-
-Your target audience can include early warning and emergency responders, scientists, land managers, and firefighters.
-Consider making your web application interactive – for example, a map where users can draw the area of interest, or an option to enter latitude and longitude.
-Consider using accessible color ramps.
-Your tool could depict a burning calendar
-Your tool could focus on a few key indices and figures and present them through data visualizations, such as:
-Historical comparisons, including anomalies against multi-year averages
-Number of fires detected and reported
-For data and resources related to this challenge, refer to the Resources tab at the top of the page. More resources may be added before the hackathon begins.
-
-Photo credit: The National Commission on Space Activities of Argentina (CONAE)
-
-NASA Space Apps is funded by NASA's Science Mission Directorate through a contract with Booz Allen Hamilton, Mindgrub, and SecondMuse.
-
-Copyright ©2026 NASA | Privacy Policy | Legal | Contact | Resources
-
-Connect with #SpaceApps
-
+### 4. Considerações de Design e Funcionalidade
+* **Público-alvo:** Brigadistas, socorristas de defesa civil, cientistas, gestores de unidades de conservação e tomadores de decisão em salas de situação.
+* **Paleta de Cores Acessível:** Uso de rampas cromáticas acessíveis para daltônicos (ex.: escala viridis, cividis ou paleta perceptualmente uniforme de alerta).
+* **Métricas Relevantes:** Comparação de anomalias contra médias e medianas históricas multi-anuais, desvio absoluto e contagem de focos ativos.

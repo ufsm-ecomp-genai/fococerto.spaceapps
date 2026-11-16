@@ -15,8 +15,8 @@ Garantir que todos os integrantes da equipe estejam cadastrados no portal oficia
 ---
 
 ### 3. Checklist de Execução
-- [ ] Obter o link de convite da equipe no site da Space Apps.
-- [ ] Enviar o link para os outros colegas do grupo.
-- [ ] Confirmar que cada colega fez login, aceitou o convite e aparece na lista pública da equipe.
-- [ ] Conferir se o número total de membros está entre 2 e 6.
-- [ ] Desmarcar a opção "Aceitando novos membros" se o time estiver completo.
+- [x] Obter o link de convite da equipe no site da Space Apps.
+- [x] Enviar o link para os outros colegas do grupo.
+- [x] Confirmar que cada colega fez login, aceitou o convite e aparece na lista pública da equipe.
+- [x] Conferir se o número total de membros está entre 2 e 6.
+- [x] Desmarcar a opção "Aceitando novos membros" se o time estiver completo.

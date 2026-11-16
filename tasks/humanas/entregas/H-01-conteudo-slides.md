@@ -73,9 +73,9 @@ texto `#FFFFFF`/`#E2E8F0`. Fonte Inter ou Montserrat. **Sem logo da NASA.** Imag
 ---
 
 ### Checklist antes de exportar
-- [ ] Exatamente 7 slides (ou menos)
+- [x] Exatamente 7 slides (ou menos)
 - [x] Nomes dos integrantes no slide 1 (Fernando Dorneles da Silva, Enzo Augusto Mucha Domingues, Gabriel Mazui Azevedo, Eduardo Jacques Pereira, Lucas Lima Mendes)
-- [ ] Nenhum número sem fonte ("+240%" não pode aparecer)
-- [ ] Crédito "Imagery: NASA Worldview" no slide 2
-- [ ] Compartilhamento: *Anyone with the link can view*
-- [ ] PDF exportado e salvo no Drive
+- [x] Nenhum número sem fonte ("+240%" não pode aparecer)
+- [x] Crédito "Imagery: NASA Worldview" no slide 2
+- [x] Compartilhamento: *Anyone with the link can view*
+- [x] PDF exportado e salvo no Drive

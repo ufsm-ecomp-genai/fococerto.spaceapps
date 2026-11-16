@@ -1,21 +1,6 @@
 
-The NASA Space Apps Challenge is happening now! 🎉
-Have a question? Join us on Space Apps Connect.
-
-Space Apps Logo 2026 color
-About Us
-Awards
-Explore the Hackathon
-
-avatar.20:44:30.019382
-Home
-Resources
-Participant FAQs
-November 13, 2026
-
-Participant FAQs
-
-Download as PDF
+# Perguntas Frequentes dos Participantes (Participant FAQs)
+## NASA International Space Apps Challenge 2026
 
 More From
 Participant FAQs

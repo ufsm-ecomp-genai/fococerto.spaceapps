@@ -10,17 +10,17 @@ Realizar o teste cego de todos os links e campos em janela anônima do navegador
 
 ### 2. Checklist Crítico de Não-Desclassificação (Zero Falhas)
 
-- [ ] **Elegibilidade da Equipe:** Confirmar na aba "Membros" que há **pelo menos 2 membros cadastrados** no time do Evento Universal (limite máximo de 6).
-- [ ] **Acesso Público aos Links (Teste em Janela Anônima):**
+- [x] **Elegibilidade da Equipe:** Confirmar na aba "Membros" que há **pelo menos 2 membros cadastrados** no time do Evento Universal (limite máximo de 6).
+- [x] **Acesso Público aos Links (Teste em Janela Anônima):**
   * Abrir o link da demonstração (slides ou vídeo) em janela anônima. Ele abriu sem pedir login ou permissão?
   * Abrir o link do repositório GitHub em janela anônima. Ele está acessível e público?
-- [ ] **Limite de Tamanho:**
+- [x] **Limite de Tamanho:**
   * Apresentação tem no máximo **7 slides**?
   * Vídeo tem no máximo **30 segundos**?
-- [ ] **Idioma:** Todos os campos do formulário estão **100% em inglês**?
-- [ ] **Proteção de Menores:** Nenhum slide ou vídeo contém imagens de pessoas menores de 18 anos?
-- [ ] **Uso de Marca:** Não há uso indevido do logotipo oficial da NASA (meatball/worm)?
-- [ ] **Dados da NASA:** Os produtos FIRMS (MODIS e VIIRS) estão expressamente citados?
+- [x] **Idioma:** Todos os campos do formulário estão **100% em inglês**?
+- [x] **Proteção de Menores:** Nenhum slide ou vídeo contém imagens de pessoas menores de 18 anos?
+- [x] **Uso de Marca:** Não há uso indevido do logotipo oficial da NASA (meatball/worm)?
+- [x] **Dados da NASA:** Os produtos FIRMS (MODIS e VIIRS) estão expressamente citados?
 
 ---
 

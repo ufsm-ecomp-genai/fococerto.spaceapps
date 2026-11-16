@@ -1,25 +1,11 @@
-
-O Desafio de Aplicativos Espaciais da NASA está acontecendo agora! 🎉
-Tem alguma dúvida? Participe do Space Apps Connect..
-
-Logotipo da Space Apps 2026 colorido
-Sobre nós
-Prêmios
-
-Explore o Hackathon
-
-avatar.20:44:30.019382
-Início
-Recursos
-Guia de Conexão de Aplicativos Espaciais
-13 de novembro de 2026
-
-Guia de Conexão de Aplicativos Espaciais
+# Guia Oficial do Space Apps Connect
+## NASA International Space Apps Challenge 2026
 
 Baixar como PDF
 
 Mais de
-Guia de Conexão de Aplicativos Espaciais
+# Guia Oficial do Space Apps Connect
+## NASA International Space Apps Challenge 2026
 Introdução ao Space Apps Connect - 2026
 Como participar do Space Apps Connect
 Como pesquisar no Space Apps Connect

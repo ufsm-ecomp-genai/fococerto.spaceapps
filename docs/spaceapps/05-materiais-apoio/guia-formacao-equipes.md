@@ -1,25 +1,11 @@
-
-O Desafio de Aplicativos Espaciais da NASA está acontecendo agora! 🎉
-Tem alguma dúvida? Participe do Space Apps Connect..
-
-Logotipo da Space Apps 2026 colorido
-Sobre nós
-Prêmios
-
-Explore o Hackathon
-
-avatar.20:44:30.019382
-Início
-Recursos
-Guia de Formação de Equipes
-23 de setembro de 2026
-
-Guia de Formação de Equipes
+# Guia Oficial de Formação de Equipes
+## NASA International Space Apps Challenge 2026
 
 Baixar como PDF
 
 Mais de
-Guia de Formação de Equipes
+# Guia Oficial de Formação de Equipes
+## NASA International Space Apps Challenge 2026
 Sobre as Equipes
 Como se orientar em um Hackathon: Seleção de Desafios e Formação de Equipes
 Criando uma nova equipe e sendo um dono de equipe
