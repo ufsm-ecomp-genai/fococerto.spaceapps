@@ -1,0 +1,16 @@
+{
+  "serie": "modis_equivalente",
+  "ano_destaque": 2025,
+  "periodo_base": "2001–2025",
+  "integrantes": "[Team members: add names here]",
+  "n_modis_caixa": 7,
+  "n_viirs_caixa": 28,
+  "razao_viirs_modis": "4",
+  "periodo_razao": "2012–2025",
+  "texto_escala": "VIIRS counts rescaled to MODIS units with a factor measured in the 2012–2025 overlap (1 VIIRS ≈ 0.25 MODIS detections). FRP is the physical cross-check.",
+  "texto_formula_n": "N = ½ (N_MODIS + k · N_VIIRS)\nk = 0.25, measured in the 2012–2025 overlap",
+  "destaque_valor": "8.6×",
+  "destaque_rotulo": "the usual activity in the week of 12–18 Nov 2025, when the rains should have started (Z = 9.3)",
+  "destaque_2": "No jump at the sensor change: 26.7k detections/yr in 2003–2011, 23.0k/yr in 2013–2021",
+  "video": ""
+}

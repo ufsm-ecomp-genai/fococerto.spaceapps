@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import {
   Flame,
   LayoutDashboard,
@@ -25,11 +25,14 @@ import {
   Sun,
   Moon,
   LifeBuoy,
+  CalendarDays,
 } from 'lucide-react';
 import { api, enc, resourceErrors } from './api';
 import { translator } from './i18nNovo';
 import OperationMap from './MapaPlano';
 import Ajuda from './Ajuda';
+// Carregado sob demanda: o JSON do calendário (~500 kB) fica num chunk separado.
+const FireCalendar = lazy(() => import('./FireCalendar'));
 import './novo.css';
 import './tema.css';
 import logo from './assets/logo.png';
@@ -460,6 +463,7 @@ export default function App() {
   );
   const nav = [
     ['overview', LayoutDashboard, 'Visão geral'],
+    ['calendar', CalendarDays, 'Calendário de fogo'],
     ['resources', Truck, 'Recursos do dia'],
     ['reasoning', GitBranch, 'Raciocínio e memória'],
     ['help', LifeBuoy, 'Central de ajuda'],
@@ -545,9 +549,11 @@ export default function App() {
                       ? 'Recursos do dia'
                       : view === 'reasoning'
                         ? 'Como chegamos aqui'
-                        : view === 'help'
-                          ? 'Central de ajuda'
-                          : '',
+                        : view === 'calendar'
+                          ? 'Calendário de atividade de fogo'
+                          : view === 'help'
+                            ? 'Central de ajuda'
+                            : '',
                   )}
                 </h1>
                 <p>
@@ -556,14 +562,29 @@ export default function App() {
                       ? 'Informe a disponibilidade do dia ou carregue um cenário existente.'
                       : view === 'help'
                         ? 'O que o sistema faz, como ler cada tela e o que ele não faz.'
-                        : 'O que o Planejador, o Crítico e o Analista decidiram, e por quê.',
+                        : view === 'calendar'
+                          ? 'Série harmonizada MODIS + VIIRS (2000–2026): padrões históricos, anomalias e períodos críticos.'
+                          : 'O que o Planejador, o Crítico e o Analista decidiram, e por quê.',
                   )}
                 </p>
               </div>
             </div>
           )}
           {view === 'help' && <Ajuda locale={locale} />}
-          {view !== 'help' && (
+          {view === 'calendar' && (
+            <Suspense fallback={<p className="fine-print">…</p>}>
+              <FireCalendar
+                locale={locale}
+                onGeneratePlan={(cell) => {
+                  setNotice(
+                    `${t('Período crítico selecionado')}: ${cell.ano}-${String(cell.mes).padStart(2, '0')}. ${t('Monte o cenário e gere o plano tático.')}`,
+                  );
+                  setView('resources');
+                }}
+              />
+            </Suspense>
+          )}
+          {view !== 'help' && view !== 'calendar' && (
             <div className="context-bar">
               <div className="context-fields">
                 <label>
