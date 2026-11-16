@@ -43,10 +43,11 @@ SECOES_README = {
     "examples": r"(?im)^#+.*example",
     "limitations": r"(?im)^#+.*limitation",
     "sample mode documented": r"(?i)--sample|SAMPLE_MODE",
-    "Zetaris setup (or link to the Participant Setup Guide)": r"(?is)zetaris.*(setup|setup_zetaris|participant setup guide)",
-    "Nightshift setup": r"(?i)nightshift",
-    "sponsor technology (Zetaris, Meterless, NVIDIA)": r"(?is)(?=.*zetaris)(?=.*meterless)(?=.*nvidia)",
-    "H-MEM conformance test documented (npm test)": r"(?is)(h-mem|hmem).*(npm test|conformance)|(npm test|conformance).*(h-mem|hmem)",
+    # NASA Space Apps 2026 (task-agente-05). O motor pré-existente e seus serviços estão em docs/prior-work/.
+    "prior work statement (NASA Space Apps rule)": r"(?im)^#+.*prior work",
+    "NASA FIRMS data cited (MODIS C6.1 + VIIRS 375 m)": r"(?is)(?=.*FIRMS)(?=.*MODIS)(?=.*VIIRS)",
+    "harmonization quick start (--calendario)": r"--calendario",
+    "pre-existing engine documented": r"docs/prior-work/operational-engine\.md",
 }
 
 

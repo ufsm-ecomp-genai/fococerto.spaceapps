@@ -22,11 +22,11 @@ Criar o componente interativo de interface `FireCalendar.jsx` em [`web/app/src/`
 ---
 
 ### 3. Checklist de Implementação
-- [ ] Criar `web/app/src/FireCalendar.jsx`
-- [ ] Importar e vincular `dados_calendario.json` (ou mock de fallback)
-- [ ] Implementar a grade responsiva com Tailwind CSS
-- [ ] Integrar o componente na página principal `web/app/src/AppNovo.jsx`
-- [ ] Adicionar botão de exportação "Download CSV"
+- [x] Criar `web/app/src/FireCalendar.jsx`
+- [x] Importar e vincular `dados_calendario.json` (ou mock de fallback)
+- [x] Implementar a grade responsiva (CSS do projeto em `fireCalendar.css`; o app não usa Tailwind)
+- [x] Integrar o componente na página principal `web/app/src/AppNovo.jsx`
+- [x] Adicionar botão de exportação "Download CSV"
 
 ---
 

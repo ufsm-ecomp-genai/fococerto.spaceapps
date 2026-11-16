@@ -2,6 +2,12 @@
 // Valores enumerados do JSON (status, regra, origem_critico, agente, faixa...) são traduzidos na tela (web/README.md, regra 7).
 // Portuguese is the source language. API narratives are never rewritten or translated.
 const enBase = {
+  'Calendário de fogo': 'Fire calendar',
+  'Calendário de atividade de fogo': 'Fire Activity Calendar',
+  'Série harmonizada MODIS + VIIRS (2000–2026): padrões históricos, anomalias e períodos críticos.':
+    'Harmonized MODIS + VIIRS series (2000–2026): historical patterns, anomalies and critical periods.',
+  'Período crítico selecionado': 'Critical period selected',
+  'Monte o cenário e gere o plano tático.': 'Set up the scenario and generate the tactical plan.',
   Histórico: 'History',
   'Definir o cenário': 'Choose a scenario',
   'Escolha como começar': 'Choose your starting point',

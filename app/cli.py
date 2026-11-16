@@ -4,6 +4,9 @@
     python -m app.cli nota --regiao R "texto"
     python -m app.cli aprovar --regiao R --periodo P
     python -m app.cli avaliar [--modo offline|llm] [--repeticoes N] [--cenarios ID ...] [--sample]
+    python -m app.cli calendario [--sample] [--harmonizar] [--modis CSV --viirs CSV] [--json SAIDA]
+    python -m app.cli --sample --calendario         (atalho para "calendario --sample")
+    python -m app.cli --sample --cenario tocantins-escasso   (atalho para "run --recursos cenarios/<nome>.yaml")
 
 SAMPLE_MODE=true (variável de ambiente) equivale a --sample em todos os subcomandos.
 Idioma do plano (CONTRATOS §19): --idioma > idioma do POST /api/run > FOCOCERTO_IDIOMA > idioma do YAML da região.
@@ -128,6 +131,12 @@ def carregar_cenario(caminho: Path) -> Cenario:
 
 
 def resolver_recursos(args) -> Path:
+    if getattr(args, "cenario", None) and not args.recursos:
+        arq = RAIZ / "cenarios" / f"{args.cenario.removesuffix('.yaml')}.yaml"
+        if not arq.exists():
+            disponiveis = ", ".join(sorted(p.stem for p in (RAIZ / "cenarios").glob("*.yaml")))
+            raise ErroCLI(f"Cenário '{args.cenario}' não encontrado em cenarios/ (disponíveis: {disponiveis}).")
+        return arq
     if args.recursos:
         return Path(args.recursos)
     # Sem --recursos: usa o primeiro cenário da região em ordem alfabética (qualquer região, nada fixo).
@@ -402,6 +411,61 @@ def cmd_avaliar(args) -> int:
     return int(main_ablacao(argv) or 0)
 
 
+def cmd_calendario(args) -> int:
+    """Harmonização MODIS + VIIRS e Fire Activity Calendar (app/data/harmonizacao.py e app/data/calendario.py).
+
+    Offline: lê só CSVs locais (por padrão os de AMOSTRA em data/samples_firms/) e nunca acessa a rede.
+    """
+    from app.data import calendario as cal
+    from app.data import harmonizacao as hz
+
+    t0 = time.monotonic()
+    modis_csv = Path(args.modis) if args.modis else hz.AMOSTRA_MODIS
+    viirs_csv = Path(args.viirs) if args.viirs else hz.AMOSTRA_VIIRS
+    usando_amostra = not (args.modis or args.viirs)
+    for arq in (modis_csv, viirs_csv):
+        if not arq.exists():
+            raise ErroCLI(f"CSV FIRMS não encontrado: {arq}")
+    try:
+        modis = hz.carregar_e_padronizar_focos(modis_csv, "MODIS")
+        viirs = hz.carregar_e_padronizar_focos(viirs_csv, "VIIRS")
+    except hz.ErroHarmonizacao as e:
+        raise ErroCLI(str(e)) from e
+    harm = hz.harmonizar_series(modis, viirs)
+    r = hz.resumo_harmonizacao(harm)
+    print(f"Harmonização MODIS + VIIRS (grade {hz.PASSO_GRADE_GRAUS}°, beta VIIRS {hz.BETA_VIIRS})"
+          + (" [DADOS DE AMOSTRA]" if usando_amostra else ""))
+    print(f"  MODIS: {len(modis)} focos ({modis_csv.name}) | VIIRS: {len(viirs)} focos ({viirs_csv.name})")
+    print(f"  {r['registros']} registros célula x dia em {r['celulas']} células; "
+          f"N_harm = {r['focos_harmonizados']} (vs {r['n_modis'] + r['n_viirs']} se somados brutos); "
+          f"FRP total = {r['frp_total_mw']} MW")
+    if args.harmonizar:
+        destino = Path(args.saida) / "harmonizacao" / "focos_harmonizados.csv"
+        hz.exportar_harmonizacao(harm, destino)
+        print(f"  CSV: {destino}")
+        progresso(f"Concluído em {time.monotonic() - t0:.2f}s")
+        return 0
+
+    destino_json = Path(args.json) if args.json else cal.SAIDA_FRONTEND
+    if usando_amostra:
+        dados = cal.gerar_calendario_frontend(caminho_saida=destino_json)
+    else:
+        dados = cal.construir_matriz_temporal(harm, ano_inicio=args.ano_inicio, ano_fim=args.ano_fim)
+        dados["amostra"] = False
+        dados["fonte_dados"] = f"NASA FIRMS CSV: {modis_csv.name} + {viirs_csv.name}"
+        cal.exportar_calendario_json(dados, destino_json)
+    print(f"Fire Activity Calendar {dados['ano_inicio']}-{dados['ano_fim']} ({dados['nome_exibicao']})"
+          + (" [AMOSTRA: climatologia SINTÉTICA + CSVs de amostra]" if dados.get("amostra") else ""))
+    print(f"  Status mensal: {dados['resumo_status']}")
+    criticos = sorted((c for c in dados["matriz"] if c["status"] == "CRITICO"),
+                      key=lambda c: c["z_score"] or 0, reverse=True)[:5]
+    for c in criticos:
+        print(f"  CRITICO {c['rotulo']}: {c['focos_harmonizados']} focos harm. (Z={c['z_score']}) {c['alerta']}")
+    print(f"  JSON: {destino_json}")
+    progresso(f"Concluído em {time.monotonic() - t0:.2f}s")
+    return 0
+
+
 # ----------------------------------------------------------------------------- parser
 
 def montar_parser() -> argparse.ArgumentParser:
@@ -414,12 +478,13 @@ def montar_parser() -> argparse.ArgumentParser:
 
     p = argparse.ArgumentParser(prog="python -m app.cli",
                                 description="FocoCerto: prioridades e ordem de recursos entre incêndios simultâneos.")
-    sub = p.add_subparsers(dest="comando", metavar="{run,nota,aprovar,avaliar}")
+    sub = p.add_subparsers(dest="comando", metavar="{run,nota,aprovar,avaliar,calendario}")
 
     r = sub.add_parser("run", parents=[comum], help="executa um período e gera plano.json, plano.md e mapa.html")
     r.add_argument("--regiao", default=None, help="região (config/regioes/<regiao>.yaml); padrão no --sample: tocantins")
     r.add_argument("--periodo", help="YYYY-MM-DD (padrão: o período do cenário)")
     r.add_argument("--recursos", help="cenarios/<nome>.yaml (padrão: o primeiro cenarios/<regiao>-*.yaml)")
+    r.add_argument("--cenario", help="nome de um arquivo em cenarios/ sem .yaml; atalho de --recursos")
     r.add_argument("--idioma", default=None,
                    help="idioma do plano inteiro: pt-BR ou en (aceita pt, en-US...); padrão: FOCOCERTO_IDIOMA ou o "
                         "idioma do YAML da região")
@@ -448,6 +513,17 @@ def montar_parser() -> argparse.ArgumentParser:
     v.add_argument("--regiao", default=None, help="aceito por compatibilidade; os cenários já dizem a região")
     v.add_argument("--pasta-logs", default=str(RAIZ / "logs"), help=argparse.SUPPRESS)
     v.set_defaults(func=cmd_avaliar)
+
+    c = sub.add_parser("calendario", parents=[comum],
+                       help="harmoniza MODIS + VIIRS e gera o Fire Activity Calendar (offline, CSVs locais)")
+    c.add_argument("--harmonizar", action="store_true",
+                   help="só harmoniza e grava <saida>/harmonizacao/focos_harmonizados.csv")
+    c.add_argument("--modis", help="CSV FIRMS MODIS C6.1 (padrão: data/samples_firms/modis_sample_c6.csv)")
+    c.add_argument("--viirs", help="CSV FIRMS VIIRS 375 m (padrão: data/samples_firms/viirs_sample_375m.csv)")
+    c.add_argument("--json", help="saída do calendário (padrão: web/app/src/assets/dados_calendario.json)")
+    c.add_argument("--ano-inicio", type=int, default=2000)
+    c.add_argument("--ano-fim", type=int, default=2026)
+    c.set_defaults(func=cmd_calendario)
     return p
 
 
@@ -456,7 +532,10 @@ def main(argv: list[str] | None = None) -> int:
     parser = montar_parser()
     argv = list(sys.argv[1:] if argv is None else argv)
     # Aceita também "python -m app.cli --sample" (spec, seção 9): vira "run --sample".
-    if argv and argv[0] == "--sample":
+    subcomandos = {"run", "nota", "aprovar", "avaliar", "calendario", "-h", "--help"}
+    if argv and argv[0] not in subcomandos and ("--calendario" in argv or "--harmonizar" in argv):
+        argv = ["calendario", *[a for a in argv if a != "--calendario"]]
+    elif argv and argv[0] == "--sample":
         argv = ["run", *argv]
     args = parser.parse_args(argv)
     if not getattr(args, "comando", None):
