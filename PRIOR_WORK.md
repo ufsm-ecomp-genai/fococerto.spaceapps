@@ -16,8 +16,7 @@ pre-existing FocoCerto code unchanged, and every later commit is hackathon work.
 
 ## Pre-existing work (before Space Apps 2026)
 
-FocoCerto was built by the same team for an earlier 2026 hackathon. It is a decision-support tool that ranks
-simultaneous wildfires and orders scarce firefighting resources. It included:
+FocoCerto was built by the same team and recognized with 1st Place at the UFSM GenAI Hackathon 2026. It is an operational decision-support tool that ranks simultaneous wildfires and dispatches scarce firefighting resources under strict humanitarian and operational rules. It included:
 
 | Component | Where |
 |---|---|

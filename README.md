@@ -227,9 +227,8 @@ No test needs an API key or internet access.
 
 ## Prior work (transparency statement)
 
-NASA Space Apps allows pre-existing work if it is declared. This repository started from the team's earlier
-**FocoCerto** project (built in October 2026 for a previous hackathon); the Space Apps repository was created on
-15 Nov 2026 from that base.
+NASA Space Apps allows pre-existing work if it is declared. This repository builds upon the team's earlier
+**FocoCerto** project — recognized with **1st Place at the UFSM GenAI Hackathon 2026** for its explainable multi-agent tactical dispatch core. The Space Apps repository was created on 15 Nov 2026 to specifically engineer the NASA FIRMS satellite harmonization pipeline and the multi-decadal Fire Activity Calendar.
 
 | | What | Where |
 |---|---|---|
