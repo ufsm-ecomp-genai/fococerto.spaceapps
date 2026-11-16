@@ -1,0 +1,119 @@
+{
+  "k_modis_por_viirs": 0.252,
+  "anos_sobreposicao": [
+    2012,
+    2013,
+    2014,
+    2015,
+    2016,
+    2017,
+    2018,
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025
+  ],
+  "total_focos_modis": 611797,
+  "total_focos_viirs": 1328777,
+  "degrau_2012": {
+    "media_anual_2003_2011_formula": 26662,
+    "media_anual_2013_2021_formula": 50454,
+    "media_anual_2003_2011_modis_eq": 26662,
+    "media_anual_2013_2021_modis_eq": 23047
+  },
+  "top10_semanas_modis_equivalente": [
+    {
+      "ano": 2025,
+      "semana": 46,
+      "n_modis": 883,
+      "n_viirs": 3215,
+      "modis_equivalente": 847.2435069992933,
+      "modis_equivalente_mediana": 98.0,
+      "modis_equivalente_z": 9.29
+    },
+    {
+      "ano": 2016,
+      "semana": 6,
+      "n_modis": 199,
+      "n_viirs": 553,
+      "modis_equivalente": 169.2904072692408,
+      "modis_equivalente_mediana": 15.1,
+      "modis_equivalente_z": 8.63
+    },
+    {
+      "ano": 2006,
+      "semana": 4,
+      "n_modis": 99,
+      "n_viirs": 0,
+      "modis_equivalente": 99,
+      "modis_equivalente_mediana": 12,
+      "modis_equivalente_z": 8.38
+    },
+    {
+      "ano": 2012,
+      "semana": 51,
+      "n_modis": 184,
+      "n_viirs": 644,
+      "modis_equivalente": 173.27490466797667,
+      "modis_equivalente_mediana": 22,
+      "modis_equivalente_z": 7.57
+    },
+    {
+      "ano": 2010,
+      "semana": 32,
+      "n_modis": 2396,
+      "n_viirs": 0,
+      "modis_equivalente": 2396,
+      "modis_equivalente_mediana": 651.3,
+      "modis_equivalente_z": 6.84
+    },
+    {
+      "ano": 2016,
+      "semana": 7,
+      "n_modis": 124,
+      "n_viirs": 452,
+      "modis_equivalente": 119.04387718932523,
+      "modis_equivalente_mediana": 12.5,
+      "modis_equivalente_z": 6.23
+    },
+    {
+      "ano": 2018,
+      "semana": 51,
+      "n_modis": 137,
+      "n_viirs": 528,
+      "modis_equivalente": 135.1353255662914,
+      "modis_equivalente_mediana": 22,
+      "modis_equivalente_z": 5.66
+    },
+    {
+      "ano": 2015,
+      "semana": 5,
+      "n_modis": 76,
+      "n_viirs": 290,
+      "modis_equivalente": 74.59894775421309,
+      "modis_equivalente_mediana": 10.3,
+      "modis_equivalente_z": 5.64
+    },
+    {
+      "ano": 2016,
+      "semana": 9,
+      "n_modis": 90,
+      "n_viirs": 337,
+      "modis_equivalente": 87.53050135575796,
+      "modis_equivalente_mediana": 16.9,
+      "modis_equivalente_z": 5.5
+    },
+    {
+      "ano": 2020,
+      "semana": 14,
+      "n_modis": 232,
+      "n_viirs": 179,
+      "modis_equivalente": 138.59038499311774,
+      "modis_equivalente_mediana": 28,
+      "modis_equivalente_z": 5.38
+    }
+  ]
+}
