@@ -121,7 +121,7 @@ $$N_{\text{harm}}(t) = \begin{cases} N_{\text{MODIS}}(t), & t < 2012 \\ N_{\text
 Both are linear, so daily cell values can be summed into weeks or months without bias (tested). Calendar baseline
 for period *p* (month 1–12 or ISO week 1–52), leaving the evaluated year out of its own baseline:
 
-$$\tilde{\mu}_p = \operatorname{median}\{N_{\text{harm}}(y,p)\},\qquad \sigma_p \approx 1.4826 \cdot \text{MAD}_p,\qquad Z_{\text{fire}}(y,p) = \frac{N_{\text{harm}}(y,p) - \tilde{\mu}_p}{\sigma_p}$$
+$$\tilde{\mu}_p = \text{median}\{N_{\text{harm}}(y,p)\},\qquad \sigma_p \approx 1.4826 \cdot \text{MAD}_p,\qquad Z_{\text{fire}}(y,p) = \frac{N_{\text{harm}}(y,p) - \tilde{\mu}_p}{\sigma_p}$$
 
 | Status | Rule |
 |---|---|
