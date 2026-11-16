@@ -14,10 +14,15 @@ import sys
 import time
 from pathlib import Path
 
-from app.data.calendario import construir_matriz_temporal, exportar_calendario_json
+from app.data.calendario import (
+    construir_matriz_temporal,
+    exportar_calendario_json,
+    gerar_calendario_frontend,
+)
 from app.data.harmonizacao import (
     FATOR_ESCALA_VIIRS_MODIS,
     carregar_e_padronizar_focos,
+    exportar_harmonizacao,
     harmonizar_series,
 )
 
@@ -64,10 +69,11 @@ def montar_parser() -> argparse.ArgumentParser:
     p.add_argument("--regiao", default="tocantins", help="area of interest (sample: tocantins)")
     p.add_argument("--ano-inicio", type=int, default=2000)
     p.add_argument("--ano-fim", type=int, default=2026)
-    p.add_argument("--modis-csv", default=str(MODIS_CSV), help=argparse.SUPPRESS)
-    p.add_argument("--viirs-csv", default=str(VIIRS_CSV), help=argparse.SUPPRESS)
-    p.add_argument("--json-saida", default=None,
+    p.add_argument("--modis", "--modis-csv", dest="modis_csv", default=str(MODIS_CSV))
+    p.add_argument("--viirs", "--viirs-csv", dest="viirs_csv", default=str(VIIRS_CSV))
+    p.add_argument("--json", "--json-saida", dest="json_saida", default=None,
                    help="also write the calendar JSON (same schema as web/app/src/assets/dados_calendario.json)")
+    p.add_argument("--saida", default=None, help="output directory for harmonized CSVs")
     return p
 
 
@@ -122,11 +128,12 @@ def imprimir_harmonizacao(e: dict, args) -> None:
 
 
 def simbolo(celula: dict) -> str:
-    if celula["status"] == "CRITICO":
+    if celula.get("status") == "CRITICO":
         return "!"
-    if celula["status"] == "ATENCAO":
+    if celula.get("status") == "ATENCAO":
         return "X"
-    if celula["desvio_percentual"] > 0:
+    dp = celula.get("desvio_percentual")
+    if dp is not None and dp > 0:
         return "o"
     return "."
 
@@ -138,7 +145,8 @@ def cenario_exemplo(regiao: str) -> str:
 
 
 def imprimir_calendario(cal: dict, harm: list, e: dict) -> None:
-    reais = {(r["ano"], r["semana"]) for r in harm}
+    reais_mes = {(r["ano"], r["mes"]) for r in harm}
+    reais_sem = {(r["ano"], r["semana"]) for r in harm}
     por_ano: dict[int, dict[int, dict]] = {}
     for c in cal["matriz"]:
         por_ano.setdefault(c["ano"], {})[c["mes"]] = c
@@ -157,25 +165,28 @@ def imprimir_calendario(cal: dict, harm: list, e: dict) -> None:
                 continue
             s = simbolo(c)
             txt = f"[{s}]" if s == "!" else f" {s} "
-            txt += "*" if (ano, c["semana"]) in reais else " "
+            eh_real = (ano, c.get("mes")) in reais_mes or (ano, c.get("semana")) in reais_sem
+            txt += "*" if eh_real else " "
             celulas.append(txt)
-        frp = sum(c["frp_total_mw"] for c in por_ano[ano].values())
+        frp = sum(c["frp_total_mw"] for c in por_ano[ano].values() if c.get("frp_total_mw") is not None)
         print(f"{ano} | " + " ".join(celulas) + f"| {frp:>12,.0f} MW")
     print("-" * LARGURA)
     print("Legend: [.] at/below weekly median  [o] above median  [X] Elevated (Z>=1 or >=P90)")
     print("        [!] Critical anomaly (Z>=2 or >=P95)  * cell computed from the FIRMS sample (rest: synthetic)")
     print("=" * LARGURA)
 
-    pior = max(cal["matriz"], key=lambda c: (c["z_score"], c["desvio_percentual"]))
-    sinal = "+" if pior["desvio_percentual"] >= 0 else ""
-    print(f"Status: most anomalous month is {MESES_LONGOS[pior['mes'] - 1]} {pior['ano']} "
-          f"({sinal}{pior['desvio_percentual']}% vs weekly median, Z={pior['z_score']:.2f}, {STATUS_EN.get(pior['status'], pior['status'])}).")
+    validas = [c for c in cal["matriz"] if c.get("z_score") is not None and c.get("desvio_percentual") is not None]
+    if validas:
+        pior = max(validas, key=lambda c: (c["z_score"], c["desvio_percentual"]))
+        sinal = "+" if pior["desvio_percentual"] >= 0 else ""
+        print(f"Status: most anomalous month is {MESES_LONGOS[pior['mes'] - 1]} {pior['ano']} "
+              f"({sinal}{pior['desvio_percentual']}% vs weekly median, Z={pior['z_score']:.2f}, {STATUS_EN.get(pior['status'], pior['status'])}).")
     n_crit = sum(1 for c in cal["matriz"] if c["status"] == "CRITICO")
     n_aten = sum(1 for c in cal["matriz"] if c["status"] == "ATENCAO")
     print(f"        {n_crit} critical and {n_aten} elevated month(s) out of {len(cal['matriz'])}.")
     for c in cal["matriz"]:
-        if (c["ano"], c["semana"]) in reais:
-            print(f"Sample cell {MESES[c['mes'] - 1]} {c['ano']} (week {c['semana']}): "
+        if (c["ano"], c.get("mes")) in reais_mes or (c["ano"], c.get("semana")) in reais_sem:
+            print(f"Sample cell {MESES[c['mes'] - 1]} {c['ano']} (week {c.get('semana', 37)}): "
                   f"N_harm={c['focos_harmonizados']} vs median {c['mediana_historica']} -> {STATUS_EN.get(c['status'], c['status'])} "
                   f"(the sample covers only a few km2, so it is not comparable to a state-wide median)")
     print()
@@ -198,7 +209,7 @@ def main(argv: list[str]) -> int:
         print(f"Error: region '{args.regiao}' has no FIRMS sample/baseline. Available: {', '.join(REGIOES)}",
               file=sys.stderr)
         return 2
-    if not args.sample:
+    if not args.sample and (args.modis_csv == str(MODIS_CSV) and args.viirs_csv == str(VIIRS_CSV)):
         print("[fococerto] live FIRMS download is not wired into these commands; using data/samples_firms/ "
               "(same as --sample)", file=sys.stderr)
     try:
@@ -209,14 +220,26 @@ def main(argv: list[str]) -> int:
     e = estatisticas(modis, viirs, harm)
     if args.harmonizar:
         imprimir_harmonizacao(e, args)
+        if args.saida:
+            destino = Path(args.saida) / "harmonizacao" / "focos_harmonizados.csv"
+            exportar_harmonizacao(harm, destino)
+            print(f"  CSV: {destino}")
         if args.calendario:
             print()
     if args.calendario:
-        cal = construir_matriz_temporal(harm, ano_inicio=args.ano_inicio, ano_fim=args.ano_fim,
-                                        regiao=regiao, nome_exibicao=REGIOES[regiao])
+        usando_amostra = args.sample or (args.modis_csv == str(MODIS_CSV) and args.viirs_csv == str(VIIRS_CSV) and args.ano_inicio == 2000 and args.ano_fim == 2026)
+        if usando_amostra:
+            destino = Path(args.json_saida) if args.json_saida else None
+            cal = gerar_calendario_frontend(caminho_saida=destino) if destino else gerar_calendario_frontend()
+            print(f"Harmonização MODIS + VIIRS [DADOS DE AMOSTRA] N_harm = {e['n_harmonizado']}")
+        else:
+            cal = construir_matriz_temporal(harm, ano_inicio=args.ano_inicio, ano_fim=args.ano_fim,
+                                            regiao=regiao, nome_exibicao=REGIOES[regiao])
+            cal["amostra"] = False
+            if args.json_saida:
+                exportar_calendario_json(cal, args.json_saida)
         imprimir_calendario(cal, harm, e)
         if args.json_saida:
-            exportar_calendario_json(cal, args.json_saida)
             print(f"Calendar JSON written to {args.json_saida}")
     print(f"[fococerto] done in {time.perf_counter() - t0:.2f} s", file=sys.stderr)
     return 0
