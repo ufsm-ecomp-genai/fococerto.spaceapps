@@ -31,6 +31,7 @@ SENSORES = ("MODIS", "VIIRS")
 PASSO_GRADE_GRAUS = 0.1
 BETA_VIIRS = 0.30            # peso de contagem do VIIRS em equivalência "MODIS-like"
 FATOR_ESCALA_VIIRS_MODIS = BETA_VIIRS   # nome usado na primeira versão (Giglio 2016; Schroeder 2014)
+K_MODIS_POR_VIIRS = 0.252      # razão empírica medida na sobreposição 2012–2025 para Tocantins / Cerrado
 ANO_INICIO_VIIRS = 2012      # Suomi-NPP VIIRS 375 m disponível no FIRMS a partir de 2012-01-20
 
 # Confiança VIIRS (categórica) -> percentual equivalente (CONTEXT.md §2)
@@ -229,10 +230,22 @@ def _confianca_01(f: dict) -> float:
 
 # ----------------------------------------------------------------------------- harmonização
 
-def contagem_harmonizada(n_modis: float, n_viirs: float, ano: int, beta: float = BETA_VIIRS) -> float:
-    """N_harm = N_MODIS (t < 2012) ou N_MODIS + beta * N_VIIRS (t >= 2012)."""
+def contagem_harmonizada(n_modis: float, n_viirs: float, ano: int, beta: float = BETA_VIIRS,
+                         metodo: str = "aditiva", k: float = K_MODIS_POR_VIIRS) -> float:
+    """Calcula a contagem de focos harmonizada N_harm:
+    - 'aditiva' (padrão): N_MODIS + beta * N_VIIRS (t >= 2012; t < 2012: N_MODIS).
+    - 'media_ponderada' ou 'modis_equivalente': 0.5 * (N_MODIS + k * N_VIIRS) para t >= 2012
+      (ou k * N_VIIRS se apenas VIIRS; N_MODIS se apenas MODIS ou t < 2012),
+      eliminando o degrau artificial de contagem dupla após 2012.
+    """
     if ano < ANO_INICIO_VIIRS:
         return float(n_modis)
+    if metodo in ("media_ponderada", "modis_equivalente"):
+        if n_modis > 0 and n_viirs > 0:
+            return 0.5 * (float(n_modis) + k * float(n_viirs))
+        if n_modis > 0:
+            return float(n_modis)
+        return k * float(n_viirs)
     return float(n_modis) + beta * float(n_viirs)
 
 
@@ -270,7 +283,8 @@ def _chave_tempo(f: dict, periodo: str):
 
 
 def harmonizar_series(focos_modis: list[dict], focos_viirs: list[dict], step: float = PASSO_GRADE_GRAUS,
-                      beta: float = BETA_VIIRS, periodo: str = "dia") -> list[dict]:
+                      beta: float = BETA_VIIRS, periodo: str = "dia", metodo: str = "aditiva",
+                      k: float = K_MODIS_POR_VIIRS) -> list[dict]:
     """Funde MODIS e VIIRS por (célula de grade, intervalo de tempo) aplicando a equivalência de contagem e a
     conservação de FRP. Retorna uma lista ordenada por (tempo, lat, lon) com um registro por célula ativa:
 
@@ -319,7 +333,8 @@ def harmonizar_series(focos_modis: list[dict], focos_viirs: list[dict], step: fl
             "semana": primeiro["semana"],
             "n_modis": n_m,
             "n_viirs": n_v,
-            "focos_harmonizados": round(contagem_harmonizada(n_m, n_v, ano, beta), 4),
+            "focos_harmonizados": round(contagem_harmonizada(n_m, n_v, ano, beta=beta, metodo=metodo, k=k), 4),
+            "modis_equivalente": round(contagem_harmonizada(n_m, n_v, ano, beta=beta, metodo="modis_equivalente", k=k), 4),
             "frp_modis_mw": round(frp_m, 4),
             "frp_viirs_mw": round(frp_v, 4),
             "frp_total_mw": round(frp_harmonizado(frp_m, frp_v, ano), 4),

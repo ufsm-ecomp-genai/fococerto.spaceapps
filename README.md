@@ -237,8 +237,11 @@ NASA Space Apps allows pre-existing work if it is declared. This repository star
 | **New work during Space Apps** | MODIS (1 km) vs VIIRS (375 m) footprint harmonization on a 0.1° grid; count equivalence and FRP conservation; 26-year (2000–2026) time-series engine with median/MAD baseline, Z_fire, P90/P95 and status; the Fire Activity Calendar web component; the `calendario` / `--calendario` / `--harmonizar` CLI; FIRMS sample datasets, scientific dossier and tests | `app/data/harmonizacao.py`, `app/data/calendario.py`, `web/app/src/FireCalendar.jsx`, `web/app/src/fireCalendar.css`, `tests/test_harmonizacao.py`, `tests/test_harmonizacao_api_v1.py`, `data/samples_firms/`, `docs/spaceapps/`, `CONTEXT.md` |
 
 The exact boundary is in the git history; the formal declaration is in [`PRIOR_WORK.md`](PRIOR_WORK.md) and
-[`docs/spaceapps/02-regras-e-diretrizes/declaracao-prior-work.md`](docs/spaceapps/02-regras-e-diretrizes/declaracao-prior-work.md). AI tools: code, tests and documentation were written with the help of
-**Claude Code (Anthropic)**; the team reviewed and tested the result and is responsible for it.
+[`docs/spaceapps/02-regras-e-diretrizes/declaracao-prior-work.md`](docs/spaceapps/02-regras-e-diretrizes/declaracao-prior-work.md).
+
+### AI and Model Usage
+
+Code, unit tests, scripts, and challenge documentation were developed with the assistance of **Google Antigravity** and **Claude Code (Anthropic)**. The team designed the architecture, audited all mathematical formulations against cited NASA literature, reviewed every code commit, and assumes full engineering responsibility for the deliverables. In the operational product, a large language model (NVIDIA Nemotron via Meterless Nightshift) powers the Planner, Critic, and Analyst agents; all numbers and metrics cited by agents are computed strictly by deterministic Python tools, and every dispatch requires human confirmation.
 
 ---
 

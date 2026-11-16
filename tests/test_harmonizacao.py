@@ -107,6 +107,9 @@ def test_agregar_em_grade(modis, viirs):
 def test_formula_de_contagem_harmonizada():
     assert hz.contagem_harmonizada(10, 30, 2024) == pytest.approx(19.0)
     assert hz.contagem_harmonizada(10, 30, 2011) == 10.0         # antes do VIIRS só conta MODIS
+    # Média ponderada MODIS-equivalente (ACHADOS-PARA-AGENTES.md): ½ (10 + 0.252 * 30) = 8.78
+    assert hz.contagem_harmonizada(10, 30, 2024, metodo="modis_equivalente") == pytest.approx(8.78, abs=0.01)
+    assert hz.contagem_harmonizada(10, 30, 2011, metodo="modis_equivalente") == 10.0
     assert hz.frp_harmonizado(100.0, 50.0, 2024) == 150.0
     assert hz.frp_harmonizado(100.0, 50.0, 2005) == 100.0
 

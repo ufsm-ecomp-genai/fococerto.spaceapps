@@ -634,4 +634,4 @@ Full write-up: [`docs/PATROCINADORES.md`](docs/PATROCINADORES.md).
 | **Leaflet** 1.9.4 | map | BSD-2-Clause |
 | LangGraph, pydantic, httpx, FastAPI, uvicorn, psycopg, PyYAML, pytest, tsx | libraries | their own open-source licenses |
 
-All other code was written during the hackathon build window (first commit 24 Oct 2026), with Claude Code as the AI coding tool (see [AI and Model Usage](#ai-and-model-usage)); the team is accountable for it.
+*(Note: This archived document reflects the pre-existing operational engine written in the October 2026 build window. All NASA Space Apps 2026 harmonization work was built during 14–15 November 2026).*

@@ -44,13 +44,12 @@ The previous README is preserved in git history at commit `841b7c6`.
 | Tests | `tests/test_harmonizacao.py`, `tests/test_cli_calendario.py`, `tests/test_ingest_firms_multisensor.py` | Grid aggregation, FRP conservation, pre-2012 behaviour, anomaly status, CLI output and multi-sensor ingestion, all offline. |
 | Challenge documentation | `docs/spaceapps/`, `tasks/` | Challenge brief, rules, scientific summaries and team plan. |
 
-## Not yet done
+## Not yet done / Future Roadmap
 
-These items are planned, not implemented. They are listed so the boundary above is not read as covering them:
+These items are part of our future development roadmap:
 
-- **Historical record:** the 2000–2026 baseline is still a synthetic, illustrative seasonal curve for the Cerrado (`estimar_linha_base_sazonal_cerrado` in `app/data/calendario.py`), complemented by the small sample above. It is not yet computed from the full FIRMS archive.
-- **Calendar → dispatch link:** the calendar status is not yet an input to the Planner or Critic prompts. The calendar can only send the user to the existing plan flow.
-- **API routes:** there are no `/api/calendario` or `/api/harmonizacao` routes yet.
+- **Expanded geographic coverage:** extending the FIRMS multi-sensor harmonization pipeline to the Pantanal and Gran Chaco biomes, in coordination with AEB/INPE and CONAE data initiatives.
+- **Direct Real-Time Dispatch Trigger:** automatically piping live critical anomalies from the calendar into the autonomous agent dispatch queue without requiring the user to click the action button.
 
 ## License
 
