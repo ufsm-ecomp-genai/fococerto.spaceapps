@@ -513,7 +513,7 @@ export default function App() {
       <div className="workspace">
         <header className="topbar">
           <div className="breadcrumb">
-            FocoCerto <ChevronRight size={14} />
+            FocoCerto Harmonizer <ChevronRight size={14} />
             <span>{t(nav.find((n) => n[0] === view)?.[2])}</span>
           </div>
           <div className="top-right">
@@ -1316,9 +1316,9 @@ export default function App() {
           <footer>
             <span className="footer-brand">
               <img src={logo} alt="" />
-              FocoCerto
+              FocoCerto Harmonizer
             </span>
-            <span>NASA FIRMS · Open-Meteo · GeoNames</span>
+            <span>Powered by NASA FIRMS (MODIS Collection 6.1 &amp; VIIRS 375m) · Apache License 2.0</span>
             <span>{t('A decisão continua com você.')}</span>
           </footer>
         </main>

@@ -1,7 +1,14 @@
-"""Ingestão do NASA FIRMS (VIIRS Suomi-NPP) no Postgres. Idempotente (INSERT … ON CONFLICT DO NOTHING).
+"""Ingestão do NASA FIRMS (MODIS C6.1 e VIIRS 375 m) no Postgres. Idempotente (INSERT … ON CONFLICT DO NOTHING).
+
+Cada sensor é baixado para um arquivo próprio em data/raw/ e os focos são consolidados (dedup pelo id, que
+inclui o satélite) no Postgres e/ou no --saida-csv. O padrão continua sendo só o VIIRS S-NPP, que é o feed do
+motor de despacho: misturar MODIS na tabela `focos` contaria o mesmo incêndio duas vezes. Para a harmonização,
+use --sensor todos (ou modis_c6) com --saida-csv.
 
 Uso:
   python scripts/ingest_firms.py --regiao tocantins --janela 7d
+  python scripts/ingest_firms.py --regiao tocantins --janela 7d --sensor todos --sem-postgres --saida-csv data/raw/tocantins/focos_todos.csv
+  python scripts/ingest_firms.py --sem-postgres --arquivo data/samples_firms/modis_sample_c6.csv data/samples_firms/viirs_sample_375m.csv
   python scripts/ingest_firms.py --regiao tocantins --arquivo data/raw/firms_7d.csv --saida-csv data/raw/tocantins/focos.csv
   python scripts/ingest_firms.py --aplicar-schema            # só cria as tabelas (sql/postgres.sql)
 DSN: --dsn ou a variável POSTGRES_DSN (ex.: postgresql://postgres:dev@localhost:55432/postgres).
@@ -14,7 +21,7 @@ from pathlib import Path
 
 from ingest_comum import RAIZ, RAW, bbox_da_regiao, dsn_postgres
 
-from app.data.fontes import COLUNAS_FOCOS, FIRMS_URL, JANELAS_FIRMS, baixar, escrever_csv, ler_firms
+from app.data.fontes import COLUNAS_FOCOS, FIRMS_URLS, JANELAS_FIRMS, baixar, escrever_csv, ler_firms
 
 
 def aplicar_schema(conn) -> None:
@@ -45,11 +52,27 @@ def gravar_postgres(focos: list[dict], dsn: str) -> tuple[int, int]:
     return depois - antes, len(focos) - (depois - antes)
 
 
+def consolidar(arquivos: list[Path], bbox=None) -> list[dict]:
+    """Lê vários CSVs do FIRMS (MODIS e/ou VIIRS) e junta os focos, sem repetir ids."""
+    vistos: set[str] = set()
+    focos = []
+    for arquivo in arquivos:
+        lidos = ler_firms(arquivo, bbox)
+        novos = [f for f in lidos if f["id"] not in vistos]
+        vistos.update(f["id"] for f in novos)
+        focos.extend(novos)
+        print(f"  {arquivo.name}: {len(lidos)} focos")
+    return focos
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--regiao", help="nome de config/regioes/<regiao>.yaml (recorta pela bbox)")
     p.add_argument("--janela", choices=JANELAS_FIRMS, default="24h")
-    p.add_argument("--arquivo", type=Path, help="CSV do FIRMS já baixado (não baixa de novo)")
+    p.add_argument("--sensor", choices=[*FIRMS_URLS, "todos"], default="viirs_snpp",
+                   help="feed(s) do FIRMS a baixar (padrão: viirs_snpp, o feed do motor de despacho)")
+    p.add_argument("--arquivo", type=Path, nargs="+",
+                   help="CSV(s) do FIRMS já baixado(s), MODIS e/ou VIIRS (não baixa nada; ignora --sensor)")
     p.add_argument("--dsn", help="DSN do Postgres (padrão: POSTGRES_DSN)")
     p.add_argument("--saida-csv", type=Path, help="também grava o recorte neste CSV")
     p.add_argument("--sem-postgres", action="store_true", help="não grava no Postgres")
@@ -66,13 +89,16 @@ def main(argv=None) -> int:
         print("schema aplicado")
         return 0
 
-    arquivo = a.arquivo
-    if arquivo is None:
-        arquivo = RAW / f"firms_{a.janela}.csv"
-        print(f"baixando {FIRMS_URL.format(janela=a.janela)} -> {arquivo}")
-        baixar(FIRMS_URL.format(janela=a.janela), arquivo)
-    bbox = bbox_da_regiao(a.regiao) if a.regiao else None
-    focos = ler_firms(arquivo, bbox)
+    arquivos = list(a.arquivo or [])
+    if not arquivos:
+        sensores = list(FIRMS_URLS) if a.sensor == "todos" else [a.sensor]
+        for sensor in sensores:
+            url = FIRMS_URLS[sensor].format(janela=a.janela)
+            # viirs_snpp mantém o nome antigo (firms_<janela>.csv) para não quebrar quem já o usa
+            nome = f"firms_{a.janela}.csv" if sensor == "viirs_snpp" else f"firms_{sensor}_{a.janela}.csv"
+            print(f"baixando {url} -> {RAW / nome}")
+            arquivos.append(baixar(url, RAW / nome))
+    focos = consolidar(arquivos, bbox_da_regiao(a.regiao) if a.regiao else None)
     dias = sorted({f["dia"] for f in focos})
     print(f"focos lidos (recorte {a.regiao or 'global'}, deduplicados): {len(focos)}; dias: {dias[0] if dias else '-'} a {dias[-1] if dias else '-'}")
     if a.saida_csv:
