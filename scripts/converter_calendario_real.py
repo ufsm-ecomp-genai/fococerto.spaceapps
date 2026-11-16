@@ -254,7 +254,7 @@ def main() -> None:
         "resumo_status": resumo_mensal,
         "total_periodos": len(matriz_mensal),
         "matriz": matriz_mensal,
-        "amostra": True,
+        "amostra": False,
         "fonte_dados": (
             "NASA FIRMS (MODIS Collection 6.1 and VIIRS 375m S-NPP archive 2000-2025 for Tocantins; "
             "611,797 MODIS and 1,328,777 VIIRS detections). Calibrated MODIS-equivalent series (k=0.252)."

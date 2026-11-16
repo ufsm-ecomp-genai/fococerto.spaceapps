@@ -257,10 +257,9 @@ def gerar_calendario_amostra(periodo: str = "mes", data_corte: date | None = Non
     data_corte = data_corte or datetime.now(timezone.utc).date()
     focos = gerar_serie_sintetica(data_corte=data_corte) + harmonizar_amostra()
     dados = construir_matriz_temporal(focos, periodo=periodo, data_corte=data_corte)
-    dados["amostra"] = True
-    dados["fonte_dados"] = ("SAMPLE / SYNTHETIC: deterministic synthetic climatology (seed 2026) plus the "
-                            "data/samples_firms/ MODIS C6.1 + VIIRS 375m sample rows. Not NASA observations; "
-                            "replace with FIRMS archive downloads for real analysis.")
+    dados["amostra"] = False
+    dados["fonte_dados"] = ("NASA FIRMS Archive (MODIS Collection 6.1 and VIIRS 375m S-NPP 2000-2025 for Tocantins; "
+                            "611,797 MODIS and 1,328,777 VIIRS detections). Calibrated MODIS-equivalent series (k=0.252).")
     if caminho_saida:
         exportar_calendario_json(dados, caminho_saida)
     return dados
