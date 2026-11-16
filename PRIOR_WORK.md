@@ -2,6 +2,7 @@
 ## NASA International Space Apps Challenge 2026
 **Desafio:** Harmonization of MODIS and VIIRS Hot Spots  
 **Equipe:** ECOMP - UFSM (Universidade Federal de Santa Maria, RS, Brasil)  
+**Integrantes:** Fernando Dorneles da Silva, Enzo Augusto Mucha Domingues, Gabriel Mazui Azevedo, Eduardo Jacques Pereira, Lucas Lima Mendes  
 **Licença do Projeto:** Apache License 2.0 (Open Source / OSI-compliant)
 
 ---

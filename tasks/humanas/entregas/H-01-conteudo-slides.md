@@ -20,7 +20,7 @@ texto `#FFFFFF`/`#E2E8F0`. Fonte Inter ou Montserrat. **Sem logo da NASA.** Imag
 - **FocoCerto Harmonizer**
 - Fire Activity Calendar & Tactical Dispatch from NASA FIRMS
 - Team ECOMP-UFSM · Universidade Federal de Santa Maria, Brazil
-- [PREENCHER: nomes dos integrantes]
+- **Fernando Dorneles da Silva · Enzo Augusto Mucha Domingues · Gabriel Mazui Azevedo · Eduardo Jacques Pereira · Lucas Lima Mendes**
 - NASA Space Apps Challenge 2026 · Challenge: *Harmonization of MODIS and VIIRS Hot Spots*
 
 ### Slide 2: The problem
@@ -74,7 +74,7 @@ texto `#FFFFFF`/`#E2E8F0`. Fonte Inter ou Montserrat. **Sem logo da NASA.** Imag
 
 ### Checklist antes de exportar
 - [ ] Exatamente 7 slides (ou menos)
-- [ ] Nomes dos integrantes no slide 1
+- [x] Nomes dos integrantes no slide 1 (Fernando Dorneles da Silva, Enzo Augusto Mucha Domingues, Gabriel Mazui Azevedo, Eduardo Jacques Pereira, Lucas Lima Mendes)
 - [ ] Nenhum número sem fonte ("+240%" não pode aparecer)
 - [ ] Crédito "Imagery: NASA Worldview" no slide 2
 - [ ] Compartilhamento: *Anyone with the link can view*

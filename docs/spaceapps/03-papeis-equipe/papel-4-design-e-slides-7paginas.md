@@ -1,5 +1,6 @@
-# Guia de Trabalho — Pessoa 4: Design & Apresentação Oficial (7 Slides)
-## Roteiro Slide por Slide com Textos em Inglês Prontos para Uso
+# Guia de Trabalho — Papel 4: Design & Apresentação Oficial (7 Slides)
+**Responsável:** Eduardo Jacques Pereira  
+**Foco:** Pitch Deck Oficial de 7 Slides (PDF/PPTX) e Narrativa Visual
 
 > [!WARNING]
 > **Regra Absoluta da NASA:** A apresentação NÃO PODE ter mais de **7 slides** no total (incluindo capa e encerramento). Slides além do 7º causam desclassificação automática da avaliação global. Todo o texto DEVE estar em **Inglês**.

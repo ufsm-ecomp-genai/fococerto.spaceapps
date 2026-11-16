@@ -60,11 +60,11 @@ docs/spaceapps/
 
 | Integrante | Papel | Onde Trabalha | Arquivo Guia |
 |---|---|---|---|
-| **Pessoa 1** | **Líder & Integração** | Antigravity / Git / Core | [`03-papeis-equipe/papel-1-coordenacao-e-integracao.md`](03-papeis-equipe/papel-1-coordenacao-e-integracao.md) |
-| **Pessoa 2** | **Backend & Algoritmo** | Terminal (Claude Code) / Python | [`03-papeis-equipe/papel-2-claude-code-harmonizacao.md`](03-papeis-equipe/papel-2-claude-code-harmonizacao.md) |
-| **Pessoa 3** | **Frontend Web** | React / Vite / Tailwind (`web/`) | [`03-papeis-equipe/papel-3-frontend-calendario-web.md`](03-papeis-equipe/papel-3-frontend-calendario-web.md) |
-| **Pessoa 4** | **Pitch Deck (7 Slides)** | Google Slides / Canva | [`03-papeis-equipe/papel-4-design-e-slides-7paginas.md`](03-papeis-equipe/papel-4-design-e-slides-7paginas.md) |
-| **Pessoa 5** | **Formulário NASA & Vídeo 30s** | Portal Space Apps / Edição | [`03-papeis-equipe/papel-5-submissao-video-e-formulario.md`](03-papeis-equipe/papel-5-submissao-video-e-formulario.md) |
+| **Fernando Dorneles da Silva** | **Líder & Integração** | Antigravity / Git / Core | [`03-papeis-equipe/papel-1-coordenacao-e-integracao.md`](03-papeis-equipe/papel-1-coordenacao-e-integracao.md) |
+| **Enzo Augusto Mucha Domingues** | **Backend & Algoritmo** | Terminal (Claude Code) / Python | [`03-papeis-equipe/papel-2-claude-code-harmonizacao.md`](03-papeis-equipe/papel-2-claude-code-harmonizacao.md) |
+| **Gabriel Mazui Azevedo** | **Frontend Web** | React / Vite / Tailwind (`web/`) | [`03-papeis-equipe/papel-3-frontend-calendario-web.md`](03-papeis-equipe/papel-3-frontend-calendario-web.md) |
+| **Eduardo Jacques Pereira** | **Pitch Deck (7 Slides)** | Google Slides / Canva | [`03-papeis-equipe/papel-4-design-e-slides-7paginas.md`](03-papeis-equipe/papel-4-design-e-slides-7paginas.md) |
+| **Lucas Lima Mendes** | **Formulário NASA & Vídeo 30s** | Portal Space Apps / Edição | [`03-papeis-equipe/papel-5-submissao-video-e-formulario.md`](03-papeis-equipe/papel-5-submissao-video-e-formulario.md) |
 
 ---
 

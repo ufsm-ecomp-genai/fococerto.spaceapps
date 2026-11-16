@@ -1,5 +1,6 @@
-# Guia de Trabalho — Pessoa 5: Submissão, Vídeo de 30s e Formulário NASA
-## Textos Oficiais em Inglês Prontos para Copiar e Colar no Portal
+# Guia de Trabalho — Papel 5: Submissão, Vídeo de 30s e Formulário NASA
+**Responsável:** Lucas Lima Mendes  
+**Foco:** Submissão no Portal NASA Space Apps, Vídeo de 30s e Auditoria de Regras
 
 ---
 
