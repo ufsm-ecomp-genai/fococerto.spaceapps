@@ -357,7 +357,7 @@ export default function Ajuda({ locale }) {
           </section>
           <a
             className="help-repo"
-            href="https://github.com/ufsm-ecomp-genai/fococerto"
+            href="https://github.com/ufsm-ecomp-genai/fococerto.spaceapps"
             target="_blank"
             rel="noreferrer"
           >
