@@ -31,7 +31,7 @@ FIRMS_URLS = {
 ---
 
 ### 4. Checklist de Execução
-- [ ] Atualizar `FIRMS_URLS` em `app/data/fontes.py`
-- [ ] Adicionar parser de múltiplos sensores em `scripts/ingest_firms.py`
-- [ ] Garantir modo offline com `--arquivo` apontando para `data/samples_firms/`
-- [ ] Testar execução sem flags de rede
+- [x] Atualizar `FIRMS_URLS` em `app/data/fontes.py`
+- [x] Adicionar parser de múltiplos sensores em `scripts/ingest_firms.py`
+- [x] Garantir modo offline com `--arquivo` apontando para `data/samples_firms/`
+- [x] Testar execução sem flags de rede

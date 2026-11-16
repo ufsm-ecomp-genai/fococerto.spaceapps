@@ -21,6 +21,6 @@ Acessar o portal interativo do **NASA Worldview** ([worldview.earthdata.nasa.gov
 ---
 
 ### 3. Checklist de Execução
-- [ ] Acessar [worldview.earthdata.nasa.gov](https://worldview.earthdata.nasa.gov/)
-- [ ] Exportar 1 ou 2 imagens comparativas limpas em PNG
-- [ ] Entregar para a Task Humana 01 (Design dos Slides)
+- [x] Acessar [worldview.earthdata.nasa.gov](https://worldview.earthdata.nasa.gov/)
+- [x] Exportar 1 ou 2 imagens comparativas limpas em PNG
+- [x] Entregar para a Task Humana 01 (Design dos Slides)

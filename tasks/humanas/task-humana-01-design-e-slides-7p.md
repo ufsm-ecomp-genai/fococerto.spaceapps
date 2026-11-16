@@ -16,16 +16,16 @@ Criar a apresentação oficial do projeto no **Google Slides** ou **Canva**, seg
 ---
 
 ### 3. Checklist de Execução
-- [ ] Criar novo documento de apresentação (formato 16:9).
-- [ ] Aplicar tema escuro profissional (Azul petróleo / Cinza escuro com destaques em Laranja e Âmbar).
-- [ ] **Slide 1:** Capa (Título: *FocoCerto Harmonizer*, Equipe: *ECOMP - UFSM*, Desafio, Slogan).
-- [ ] **Slide 2:** O Problema (A quebra histórica de 24 anos entre MODIS e VIIRS).
-- [ ] **Slide 3:** A Solução (Pipeline: Dados NASA $\to$ Harmonização $\to$ Calendário $\to$ Despacho).
-- [ ] **Slide 4:** Metodologia Científica (Grade de 0.1°, conservação de FRP e Z-score).
-- [ ] **Slide 5:** Screenshots Reais do Web App (Pegar capturas nítidas com a Trilha dos Agentes).
-- [ ] **Slide 6:** O Diferencial Operacional (Além de gráficos: IA Planner-Critic para brigadas em campo).
-- [ ] **Slide 7:** Conclusão, Dados NASA e Links (GitHub e Live Demo).
-- [ ] **Contar os slides:** Garantir que existam **exatamente $\le 7$ lâminas**.
-- [ ] Configurar o link de compartilhamento como: *"Qualquer pessoa com o link pode ver"*.
-- [ ] Exportar versão em PDF e salvar no Google Drive como backup.
-- [ ] Entregar o link público para a Task Humana 03 (Preenchimento no Portal).
+- [x] Criar novo documento de apresentação (formato 16:9).
+- [x] Aplicar tema escuro profissional (Azul petróleo / Cinza escuro com destaques em Laranja e Âmbar).
+- [x] **Slide 1:** Capa (Título: *FocoCerto Harmonizer*, Equipe: *ECOMP - UFSM*, Desafio, Slogan).
+- [x] **Slide 2:** O Problema (A quebra histórica de 24 anos entre MODIS e VIIRS).
+- [x] **Slide 3:** A Solução (Pipeline: Dados NASA $\to$ Harmonização $\to$ Calendário $\to$ Despacho).
+- [x] **Slide 4:** Metodologia Científica (Grade de 0.1°, conservação de FRP e Z-score).
+- [x] **Slide 5:** Screenshots Reais do Web App (Pegar capturas nítidas com a Trilha dos Agentes).
+- [x] **Slide 6:** O Diferencial Operacional (Além de gráficos: IA Planner-Critic para brigadas em campo).
+- [x] **Slide 7:** Conclusão, Dados NASA e Links (GitHub e Live Demo).
+- [x] **Contar os slides:** Garantir que existam **exatamente $\le 7$ lâminas**.
+- [x] Configurar o link de compartilhamento como: *"Qualquer pessoa com o link pode ver"*.
+- [x] Exportar versão em PDF e salvar no Google Drive como backup.
+- [x] Entregar o link público para a Task Humana 03 (Preenchimento no Portal).

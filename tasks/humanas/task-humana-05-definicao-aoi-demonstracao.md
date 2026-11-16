@@ -19,5 +19,5 @@ Escolher a **Área de Interesse (AOI)** principal que servirá de vitrine tanto 
 ---
 
 ### 3. Checklist de Decisão
-- [ ] Alinhar com a equipe a escolha da região principal (Tocantins/Cerrado é o caminho mais seguro e rápido para o prazo de hoje).
-- [ ] Avisar a Trilha dos Agentes para calibrar o arquivo `dados_calendario.json` com essa área.
+- [x] Alinhar com a equipe a escolha da região principal (Tocantins/Cerrado é o caminho mais seguro e rápido para o prazo de hoje).
+- [x] Avisar a Trilha dos Agentes para calibrar o arquivo `dados_calendario.json` com essa área.

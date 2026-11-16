@@ -38,7 +38,7 @@ Planner-Critic Tactical Dispatch Triggered: 4 Brigades Assigned.
 ---
 
 ### 4. Checklist de Execução
-- [ ] Adicionar flags no `argparse` em `app/cli.py`
-- [ ] Conectar chamada com `app/data/calendario.py` e `app/data/harmonizacao.py`
-- [ ] Garantir que funcione em modo `--sample` sem dependência de serviços externos
-- [ ] Testar comandos no terminal
+- [x] Adicionar flags no `argparse` em `app/cli.py`
+- [x] Conectar chamada com `app/data/calendario.py` e `app/data/harmonizacao.py`
+- [x] Garantir que funcione em modo `--sample` sem dependência de serviços externos
+- [x] Testar comandos no terminal

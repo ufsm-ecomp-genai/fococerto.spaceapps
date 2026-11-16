@@ -22,6 +22,6 @@ Atualizar a interface do frontend em [`web/app/`](file:///home/dorneles/ecomp-uf
 ---
 
 ### 3. Checklist de Execução
-- [ ] Atualizar `web/app/index.html`
-- [ ] Atualizar textos de cabeçalho e rodapé em `AppNovo.jsx`
-- [ ] Garantir que o build de produção gere os arquivos corretos em `web/dist/`
+- [x] Atualizar `web/app/index.html`
+- [x] Atualizar textos de cabeçalho e rodapé em `AppNovo.jsx`
+- [x] Garantir que o build de produção gere os arquivos corretos em `web/dist/`
