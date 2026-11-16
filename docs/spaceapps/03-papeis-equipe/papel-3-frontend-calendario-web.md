@@ -1,5 +1,6 @@
-# Guia de Trabalho — Pessoa 3: Frontend Web & Calendário de Queimadas
-## Desenvolvimento da Interface do Fire Activity Calendar (React / Vite / Tailwind)
+# Guia de Trabalho — Papel 3: Frontend Web & Calendário de Queimadas
+**Responsável:** Gabriel Mazui Azevedo  
+**Foco:** Interface do Fire Activity Calendar (React / Vite / Tailwind) em `web/app/`
 
 ---
 

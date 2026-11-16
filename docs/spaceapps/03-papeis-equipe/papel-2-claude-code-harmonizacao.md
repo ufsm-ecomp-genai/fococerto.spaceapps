@@ -1,5 +1,6 @@
-# Guia de Trabalho — Pessoa 2: Backend & Harmonização Científica
-## Documento para uso com Claude Code no Terminal
+# Guia de Trabalho — Papel 2: Backend & Harmonização Científica
+**Responsável:** Enzo Augusto Mucha Domingues  
+**Foco:** Engenharia de Dados, Claude Code, Harmonização MODIS/VIIRS e Motor Climatológico
 
 > [!TIP]
 > **Instrução para o desenvolvedor:** Você pode passar este documento diretamente como contexto ou prompt inicial para o **Claude Code**. Ele contém todos os contratos, fórmulas matemáticas, arquivos de entrada e saídas esperadas.

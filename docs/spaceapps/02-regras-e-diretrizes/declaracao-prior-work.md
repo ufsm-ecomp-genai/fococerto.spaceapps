@@ -1,3 +1,10 @@
+# Declaração Formal de Trabalho Prévio (Prior Work Disclosure)
+## NASA International Space Apps Challenge 2026
+**Desafio:** Harmonization of MODIS and VIIRS Hot Spots
+**Equipe:** ECOMP - UFSM (Universidade Federal de Santa Maria, RS, Brasil)
+**Integrantes:** Fernando Dorneles da Silva, Enzo Augusto Mucha Domingues, Gabriel Mazui Azevedo, Eduardo Jacques Pereira, Lucas Lima Mendes
+**Licença do Projeto:** Apache License 2.0 (Open Source / OSI-compliant)
+
 # Declaração de Trabalho Prévio (Prior Work)
 
 A declaração oficial, em inglês (idioma exigido pela NASA nos materiais da submissão), está em

@@ -1,5 +1,6 @@
-# Guia de Trabalho — Pessoa 1: Líder, Coordenação e Integração
-## Responsável pela Arquitetura Geral, Repositório Git, Antigravity e Revisão
+# Guia de Trabalho — Papel 1: Líder, Coordenação e Integração
+**Responsável:** Fernando Dorneles da Silva  
+**Foco:** Arquitetura Geral, Repositório Git, Antigravity e Revisão Final
 
 ---
 

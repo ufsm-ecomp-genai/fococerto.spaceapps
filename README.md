@@ -282,8 +282,15 @@ NASA does not endorse this project. Use of NASA names follows
 
 ## Team
 
-**ECOMP - UFSM**, Computer Engineering, Universidade Federal de Santa Maria (Brazil). Roles and playbooks:
-[`docs/spaceapps/03-papeis-equipe/`](docs/spaceapps/03-papeis-equipe/).
+**ECOMP - UFSM**, Computer Engineering, Universidade Federal de Santa Maria (Brazil).
+
+* **Fernando Dorneles da Silva** — Team Lead & System Integration
+* **Enzo Augusto Mucha Domingues** — Backend, Data Algorithms & Harmonization
+* **Gabriel Mazui Azevedo** — Frontend Engineering & React Fire Activity Calendar
+* **Eduardo Jacques Pereira** — Presentation Deck (7 Slides) & Product Design
+* **Lucas Lima Mendes** — Portal Submission, 30s Video & External Coordination
+
+Full team roster and governance details: [`EQUIPE.md`](EQUIPE.md) and [`docs/spaceapps/03-papeis-equipe/`](docs/spaceapps/03-papeis-equipe/).
 
 Repository: <https://github.com/ufsm-ecomp-genai/fococerto.spaceapps> · Task boards: [`tasks/`](tasks/README.md)
 
